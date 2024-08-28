@@ -1,17 +1,19 @@
 package sprites
 
+import android.content.Context
+import com.example.fps_raytrace.R
 import engine.Screen
 import engine.textures.Sprite
 import engine.textures.readPpmImage
 import models.PlayerState
 
 
-object GuardSprite : Sprite {
+class GuardSprite(context: Context) : Sprite {
     override val TRANSPARENT_COLOR = Screen.Color(152, 0, 136)
 
     override val SPRITE_SIZE = 64
 
-    private val guardTextureSheet = readPpmImage("sprites/enemy.ppm")
+    private val guardTextureSheet = readPpmImage(context, R.raw.enemy)
 
     private val guardStill = mapOf(
         0 to loadFrame(guardTextureSheet, 0, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),

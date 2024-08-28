@@ -1,3 +1,5 @@
+import android.content.Context
+import com.example.fps_raytrace.R
 import engine.*
 import engine.textures.readPpmImage
 import maps.*
@@ -19,17 +21,21 @@ enum class Moves {
 }
 
 class RaytracerEngine(
+    context: Context,
     private val width: Int,
     private val height: Int,
     private val fovRad: Float = 60.toRadian(),
     private val moveStep: Float = 0.2f,
     private val rotationStepRad: Float = 2f.toRadian(),
     private val worldTextureSize: Int = 64,
-    private val floorTexture: IntArray = readPpmImage("textures/floor.ppm"),
-    private val cellingTexture: IntArray = readPpmImage("textures/celling.ppm"),
     private val cellSize: Int = 2
 ) {
     private val currentMap: Map = Map1
+    private val  walls = Walls(context)
+    private val pistolSprite = PistolSprite(context)
+    private val guardSprite = GuardSprite(context)
+    private val floorTexture: IntArray = readPpmImage(context, R.raw.floor)
+    private val cellingTexture: IntArray = readPpmImage(context, R.raw.celling)
 
     private val wallDepths = FloatArray(width) // depth buffer
 
@@ -47,7 +53,7 @@ class RaytracerEngine(
             x = playerPosition[0],
             y = playerPosition[1],
             rotationRad = -90f.toRadian().normalizeAngle(),
-            isMainPlayer = true
+            isMainPlayer = false
         )
 
 
@@ -60,6 +66,7 @@ class RaytracerEngine(
             enemy.animate(map = currentMap, cellSize = cellSize)
         }
 
+        player.animate(state = PlayerState.WALKING, map = currentMap, cellSize = cellSize)
         movePlayer(pressedKeys)
         onFrame(generateFrame())
     }
@@ -90,12 +97,12 @@ class RaytracerEngine(
 
         // draw pistol
         screen.drawBitmap(
-            bitmap = PistolSprite.getFrame(player.shootingFrame)!!,
+            bitmap = pistolSprite.getFrame(player.shootingFrame)!!,
             x = 2 * screen.w / 3 + (20 * sin(player.x)).toInt(),
             y = (screen.h - 175 * 0.8f + 20 - 10 * sin(player.y)).toInt(),
             bitmapSizeX = 128,
             bitmapSizeY = 128,
-            transparentColor = PistolSprite.TRANSPARENT_COLOR
+            transparentColor = pistolSprite.TRANSPARENT_COLOR
         )
 
         // draw cross when enemy is in range
@@ -140,10 +147,11 @@ class RaytracerEngine(
 
         // Calculate the texture index, ensuring it falls within the valid range
         val numTextures = 8  // Assuming there are 8 textures in the textureSet
-        val textureIndex = numTextures - ((diff / (2 * engine.PI) * numTextures) + numTextures) % numTextures
+        val textureIndex =
+            numTextures - ((diff / (2 * engine.PI) * numTextures) + numTextures) % numTextures
 
         // Fetch the correct texture for rendering
-        val texture = GuardSprite.getTexture(
+        val texture = guardSprite.getTexture(
             direction = textureIndex.toInt(),
             state = enemy.state,
             walkingFrame = enemy.walkingFrame,
@@ -188,11 +196,11 @@ class RaytracerEngine(
                         if (wallDepths[x] - (distance / cellSize) > -0.1) { // -0.1 - padding to avoid wall clipping
                             // Calculate texture coordinates
                             val texX =
-                                ((x - (screenX - perceivedWidth / 2)).toFloat() / perceivedWidth * GuardSprite.SPRITE_SIZE).toInt() % GuardSprite.SPRITE_SIZE
+                                ((x - (screenX - perceivedWidth / 2)).toFloat() / perceivedWidth * guardSprite.SPRITE_SIZE).toInt() % guardSprite.SPRITE_SIZE
                             val texY =
-                                ((y - topY).toFloat() / perceivedHeight * GuardSprite.SPRITE_SIZE).toInt() % GuardSprite.SPRITE_SIZE
+                                ((y - topY).toFloat() / perceivedHeight * guardSprite.SPRITE_SIZE).toInt() % guardSprite.SPRITE_SIZE
 
-                            val texIndex = (texY * GuardSprite.SPRITE_SIZE + texX) * 3
+                            val texIndex = (texY * guardSprite.SPRITE_SIZE + texX) * 3
 
                             val texColor = Screen.Color(
                                 texture[texIndex],
@@ -200,7 +208,7 @@ class RaytracerEngine(
                                 texture[texIndex + 2],
                             )
 
-                            if (texColor != GuardSprite.TRANSPARENT_COLOR) {
+                            if (texColor != guardSprite.TRANSPARENT_COLOR) {
                                 // Apply distance-based shading
                                 val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
                                 val shadedColor = darkenColor(texColor, intensity)
@@ -315,7 +323,8 @@ class RaytracerEngine(
             var texPos = (drawStart - height / 2 + lineHeight / 2) * step
 
 
-            val wallTexture = Walls.wallTextures[wallTextureIndex] ?: error("Wall texture not found $wallTextureIndex")
+            val wallTexture = walls.wallTextures[wallTextureIndex]
+                ?: error("Wall texture not found $wallTextureIndex")
 
             for (y in drawStart until drawEnd) {
                 val texY = (texPos.toInt() and (worldTextureSize - 1))
@@ -354,7 +363,8 @@ class RaytracerEngine(
                             cellingTexture[texIndex + 2],
                         )
 
-                        val color = darkenColor(texColor, 0.5f) // Apply some darkness to the ceiling
+                        val color =
+                            darkenColor(texColor, 0.5f) // Apply some darkness to the ceiling
                         bitmap.setRGB(x, y, color)
                     }
                 }
@@ -439,11 +449,27 @@ class RaytracerEngine(
         val newX = player.x + dx
         val newY = player.y + dy
 
-        if (isWall(newX, player.y, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.NONE) {
+        if (isWall(
+                newX,
+                player.y,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.NONE
+        ) {
             player.x = newX
         }
 
-        if (isWall(player.x, newY, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.NONE) {
+        if (isWall(
+                player.x,
+                newY,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.NONE
+        ) {
             player.y = newY
         }
 
@@ -456,18 +482,50 @@ class RaytracerEngine(
     }
 
     private fun isExitTouched(newX: Float, newY: Float): Boolean {
-        return isWall(newX, player.y, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.EXIT ||
-                isWall(newY, player.y, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.EXIT
+        return isWall(
+            newX,
+            player.y,
+            currentMap.MAP,
+            currentMap.MAP_X,
+            currentMap.MAP_Y,
+            cellSize
+        ) == WallType.EXIT ||
+                isWall(
+                    newY,
+                    player.y,
+                    currentMap.MAP,
+                    currentMap.MAP_X,
+                    currentMap.MAP_Y,
+                    cellSize
+                ) == WallType.EXIT
     }
 
     private fun openDoor(newX: Float, newY: Float) {
         // Open door
-        if (isWall(newX, player.y, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.DOOR) {
-            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] = 0
+        if (isWall(
+                newX,
+                player.y,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.DOOR
+        ) {
+            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] =
+                0
         }
 
-        if (isWall(player.x, newY, currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) == WallType.DOOR) {
-            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] = 0
+        if (isWall(
+                player.x,
+                newY,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.DOOR
+        ) {
+            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] =
+                0
         }
     }
 

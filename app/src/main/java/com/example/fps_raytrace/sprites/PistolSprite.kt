@@ -1,13 +1,15 @@
 package sprites
 
+import android.content.Context
+import com.example.fps_raytrace.R
 import engine.Screen
 import engine.textures.Sprite
 import engine.textures.readPpmImage
 import models.PlayerState
 
-object PistolSprite : Sprite {
+class PistolSprite(context: Context) : Sprite {
 
-    private val pistolTextureSheet = readPpmImage("sprites/pistol.ppm")
+    private val pistolTextureSheet = readPpmImage(context, R.raw.pistol)
     private val pistolTexture = mapOf(
         0 to loadFrame(pistolTextureSheet, 0, 0, 128, 384, 0),
         1 to loadFrame(pistolTextureSheet, 1, 0, 128, 384, 0),

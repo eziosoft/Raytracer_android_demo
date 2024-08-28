@@ -1,13 +1,21 @@
 package engine
 
 import android.graphics.Bitmap
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
+import kotlin.math.min
 
 class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
     private val bitmap = Array(w * h) { color }
+    private val outputBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+
+
 
     fun setRGB(x: Int, y: Int, color: Color) {
-        if(x < 0 || x >= w || y < 0 || y >= h) return
+        if (x < 0 || x >= w || y < 0 || y >= h) return
 
         bitmap[y * w + x] = color
     }
@@ -16,29 +24,33 @@ class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
         return bitmap[y * w + x]
     }
 
+
     fun getBitmap(w: Int, h: Int): Bitmap {
-        // Create a mutable bitmap with the desired width and height
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-
-        // Create an array to hold all the pixel colors
+        val outputBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val pixels = IntArray(w * h)
+        val cores = Runtime.getRuntime().availableProcessors()
+        val chunkSize = h / cores
 
-        // Fill the pixel array with color values
-        for (i in 0 until w) {
-            for (j in 0 until h) {
-                // Calculate the index in the 1D array
-                val index = j * w + i
-                // Get the color using your getRGB(i, j) method and convert it to Android's ARGB format
-                pixels[index] = getRGB(i, j).toArgb()
+//        Log.d("aaa", "getBitmap: cores=$cores, chunkSize=$chunkSize")
+
+        runBlocking {
+            val jobs = (0 until cores).map { core ->
+                launch(Dispatchers.Unconfined) {
+                    val startRow = core * chunkSize
+                    val endRow = min(startRow + chunkSize, h)
+                    for (j in startRow until endRow) {
+                        for (i in 0 until w) {
+                            pixels[j * w + i] = bitmap[j * w + i].toRgb()
+                        }
+                    }
+                }
             }
+            jobs.forEach { it.join() }
         }
 
-        // Set the pixels in the bitmap all at once
-        bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
-
-        return bitmap
+        outputBitmap.setPixels(pixels, 0, w, 0, 0, w, h)
+        return outputBitmap
     }
-
 
     fun drawFilledRect(x: Int, y: Int, w: Int, h: Int, color: Color) {
         for (i in x until x + w) {
@@ -78,7 +90,14 @@ class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
     /***
      * Bitmap is in form of IntArray. Draws bitmap. Used to draw gun.
      */
-    fun drawBitmap(bitmap:IntArray, x: Int, y: Int, bitmapSizeX: Int, bitmapSizeY: Int, transparentColor: Color){
+    fun drawBitmap(
+        bitmap: IntArray,
+        x: Int,
+        y: Int,
+        bitmapSizeX: Int,
+        bitmapSizeY: Int,
+        transparentColor: Color
+    ) {
         for (i in 0 until bitmapSizeX) {
             for (j in 0 until bitmapSizeY) {
                 val color = Color(
@@ -97,6 +116,10 @@ class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
     data class Color(val red: Int, val green: Int, val blue: Int) {
         fun toArgb(): Int {
             return (red shl 16) or (green shl 8) or blue
+        }
+
+        fun toRgb(): Int {
+            return android.graphics.Color.rgb(red, green, blue)
         }
     }
 }
