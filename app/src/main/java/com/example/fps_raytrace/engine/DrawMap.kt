@@ -5,6 +5,11 @@ import models.Player
 import kotlin.math.cos
 import kotlin.math.sin
 
+private val filledColor = Screen.Color(255, 255, 255)
+private val emptyColor = Screen.Color(0, 0, 0)
+private val mapPlayerColor = Screen.Color(0, 255, 255)
+private val enemyMapColor = Screen.Color(255, 0, 0)
+
 fun drawMap(
     screen: Screen,
     map: Map,
@@ -18,13 +23,17 @@ fun drawMap(
     for (y: Int in 0 until map.MAP_Y) {
         for (x in 0 until map.MAP_X) {
 
-            val color: Screen.Color = if (map.MAP[y * map.MAP_X + x] > 0) {
-                Screen.Color(255, 255, 255)
-            } else {
-                Screen.Color(0, 0, 0)
-            }
-
-            screen.drawFilledRect(xOffset + x * cellSize, yOffset + y * cellSize, cellSize, cellSize, color)
+            screen.drawFilledRect(
+                x = xOffset + x * cellSize,
+                y = yOffset + y * cellSize,
+                w = cellSize,
+                h = cellSize,
+                color = if (map.MAP[y * map.MAP_X + x] > 0) {
+                    filledColor
+                } else {
+                    emptyColor
+                }
+            )
         }
     }
 
@@ -33,7 +42,7 @@ fun drawMap(
         player,
         xOffset = xOffset,
         yOffset = yOffset,
-        color = Screen.Color(0, 255, 255),
+        color = mapPlayerColor,
         playerSize = playerSize
     )
 
@@ -43,7 +52,7 @@ fun drawMap(
             enemy,
             xOffset = xOffset,
             yOffset = yOffset,
-            color = Screen.Color(255, 0, 0),
+            color = enemyMapColor,
             playerSize = playerSize
         )
     }
@@ -54,7 +63,7 @@ private fun drawPlayerOnMap(
     player: Player,
     xOffset: Int,
     yOffset: Int,
-    color: Screen.Color = Screen.Color(0, 255, 255),
+    color: Screen.Color,
     playerSize: Float
 ) {
     bitmap.drawFilledRect(

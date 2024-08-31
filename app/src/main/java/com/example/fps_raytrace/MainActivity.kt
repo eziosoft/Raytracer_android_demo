@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -46,36 +47,29 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun RayCaster(raytracer: RaytracerEngine) {
-
-        var screen by remember { mutableStateOf(Screen(W, H)) }
+        val screenBitmap = produceState(initialValue = Screen(W, H).getBitmap().asImageBitmap()) {
+            while (true) {
+                val renderTime = measureTime {
+                    raytracer.gameLoop(
+                        pressedKeys = emptySet(),
+                        onFrame = { bitmap ->
+                            value = bitmap.getBitmap().asImageBitmap()
+                        }
+                    )
+                }
+                delay((1000 - renderTime.toLong(DurationUnit.MILLISECONDS)) / FPS.toLong())
+            }
+        }
 
         Image(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black),
-            bitmap = screen.getBitmap(W, H).asImageBitmap(),
+            bitmap = screenBitmap.value,
             contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            filterQuality = FilterQuality.None,
+            contentScale = ContentScale.Fit,
+            filterQuality = FilterQuality.High,
         )
-
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                val renderTime = measureTime {
-                    raytracer.gameLoop(
-                        pressedKeys = emptySet(),//mapKeysToMoves(pressedKeys),
-                        onFrame = {
-                            screen = it
-                        }
-                    )
-                }
-
-                delay((1000 - renderTime.toLong(DurationUnit.MILLISECONDS)) / FPS.toLong())
-
-                println("render time: $renderTime, maxFPS = ${1000 / renderTime.toInt(DurationUnit.MILLISECONDS)}")
-            }
-        }
     }
 
 

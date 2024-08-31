@@ -1,18 +1,30 @@
 package engine
 
 import android.graphics.Bitmap
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.min
 
 class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
     private val bitmap = Array(w * h) { color }
+
     private val outputBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    private val pixels = IntArray(w * h)
+    private val cpuCores = Runtime.getRuntime().availableProcessors()
 
-
+    fun clear() {
+        for (i in 0 until w) {
+            for (j in 0 until h) {
+                setRGB(i, j, Color(0, 0, 0))
+            }
+        }
+    }
 
     fun setRGB(x: Int, y: Int, color: Color) {
         if (x < 0 || x >= w || y < 0 || y >= h) return
@@ -25,27 +37,27 @@ class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
     }
 
 
-    fun getBitmap(w: Int, h: Int): Bitmap {
-        val outputBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val pixels = IntArray(w * h)
-        val cores = Runtime.getRuntime().availableProcessors()
-        val chunkSize = h / cores
-
-//        Log.d("aaa", "getBitmap: cores=$cores, chunkSize=$chunkSize")
-
-        runBlocking {
-            val jobs = (0 until cores).map { core ->
-                launch(Dispatchers.Unconfined) {
-                    val startRow = core * chunkSize
-                    val endRow = min(startRow + chunkSize, h)
-                    for (j in startRow until endRow) {
-                        for (i in 0 until w) {
-                            pixels[j * w + i] = bitmap[j * w + i].toRgb()
+    fun getBitmap(): Bitmap {
+        val threadPool = Executors.newFixedThreadPool(cpuCores)
+        val chunkSize = h / cpuCores
+        try {
+            runBlocking {
+                val jobs = (0 until cpuCores).map { core ->
+                    async(threadPool.asCoroutineDispatcher()) {
+                        val startRow = core * chunkSize
+                        val endRow = min(startRow + chunkSize, h)
+                        for (j in startRow until endRow) {
+                            val rowOffset = j * w
+                            for (i in 0 until w) {
+                                pixels[rowOffset + i] = bitmap[rowOffset + i].toRgb()
+                            }
                         }
                     }
                 }
+                jobs.awaitAll()
             }
-            jobs.forEach { it.join() }
+        } finally {
+            threadPool.shutdown()
         }
 
         outputBitmap.setPixels(pixels, 0, w, 0, 0, w, h)
@@ -98,28 +110,39 @@ class Screen(val w: Int, val h: Int, color: Color = Color(0, 0, 0)) {
         bitmapSizeY: Int,
         transparentColor: Color
     ) {
-        for (i in 0 until bitmapSizeX) {
-            for (j in 0 until bitmapSizeY) {
-                val color = Color(
-                    bitmap[(j * bitmapSizeX + i) * 3],
-                    bitmap[(j * bitmapSizeX + i) * 3 + 1],
-                    bitmap[(j * bitmapSizeX + i) * 3 + 2]
-                )
-                if (color != transparentColor) {
-                    setRGB(x + i, y + j, color)
+        val transparentRed = transparentColor.red
+        val transparentGreen = transparentColor.green
+        val transparentBlue = transparentColor.blue
+
+        var offset = 0
+        for (j in 0 until bitmapSizeY) {
+            for (i in 0 until bitmapSizeX) {
+                val r = bitmap[offset]
+                val g = bitmap[offset + 1]
+                val b = bitmap[offset + 2]
+                if (r != transparentRed || g != transparentGreen || b != transparentBlue) {
+                    setRGB(x + i, y + j, Color(r, g, b))
                 }
+                offset += 3
             }
         }
     }
 
 
-    data class Color(val red: Int, val green: Int, val blue: Int) {
+    data class Color(var red: Int, var green: Int, var blue: Int) {
         fun toArgb(): Int {
             return (red shl 16) or (green shl 8) or blue
         }
 
         fun toRgb(): Int {
             return android.graphics.Color.rgb(red, green, blue)
+        }
+
+        // Helper function to darken a color based on intensity used for shading
+        fun darken(intensity: Float) {
+            red = (red * intensity).toInt().coerceIn(0, 255)
+            green = (green * intensity).toInt().coerceIn(0, 255)
+            blue = (blue * intensity).toInt().coerceIn(0, 255)
         }
     }
 }
