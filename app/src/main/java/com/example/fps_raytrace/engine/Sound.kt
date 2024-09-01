@@ -9,10 +9,18 @@ import android.util.Log
 class Sound(private val context: Context) {
     private val soundPool = SoundPool.Builder().setMaxStreams(10).build()
     private val soundMap = mutableMapOf<Int, Int>()
+    private var mediaPlayer: MediaPlayer? = null
 
     fun loadSound(resourceId: Int) {
         val soundId = soundPool.load(context, resourceId, 1)
         soundMap[resourceId] = soundId
+
+        soundPool.setOnLoadCompleteListener { soundPool, sampleId, status ->
+            Log.d(
+                "bbb",
+                "onLoadComplete: $sampleId"
+            )
+        }
     }
 
     fun playSound(resourceId: Int, volume: Float = 1f) {
@@ -21,11 +29,12 @@ class Sound(private val context: Context) {
         soundPool.play(soundId, volume, volume, 1, 0, 1f)
     }
 
-    fun playMp3(resId: Int, isLooping:Boolean): MediaPlayer {
-        val mediaPlayer = MediaPlayer.create(context, resId)
-        mediaPlayer.isLooping = isLooping
-        mediaPlayer.start()
-        return mediaPlayer
+    fun playMusic(resId: Int, isLooping:Boolean) {
+        mediaPlayer = MediaPlayer.create(context, resId)
+        mediaPlayer?.let {
+            it.isLooping = isLooping
+            it.start()
+        }
     }
 
 }

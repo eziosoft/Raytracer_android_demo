@@ -63,7 +63,8 @@ class RaytracerEngine(
             x = playerPosition[0],
             y = playerPosition[1],
             rotationRad = -90f.toRadian().normalizeAngle(),
-            isMainPlayer = false
+            isMainPlayer = true,
+            sound = sound,
         )
 
 
@@ -73,10 +74,11 @@ class RaytracerEngine(
 
     init {
         sound.loadSound(R.raw.soundtrack)
-        sound.loadSound(R.raw.gunshot)
+        sound.loadSound(R.raw.gunshot1)
         sound.loadSound(R.raw.mandeathscream)
+        sound.loadSound(R.raw.step)
 
-        sound.playMp3(R.raw.soundtrack, true)
+        sound.playMusic(R.raw.soundtrack, true)
     }
 
     fun gameLoop(pressedKeys: Set<Moves>, onFrame: (Screen) -> Unit) {
@@ -545,7 +547,6 @@ class RaytracerEngine(
             ) == WallType.NONE
         ) {
             player.x = newX
-            sound.playSound(R.raw.gunshot1)
         }
 
         if (isWall(
@@ -618,7 +619,10 @@ class RaytracerEngine(
 
     private fun shootAndCheckHits() {
         player.animate(state = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
-        sound.playSound(R.raw.gunshot1)
+
+        if (player.shootingFrame == 0) {
+            sound.playSound(R.raw.gunshot1)
+        }
 
         enemies.forEach { enemy ->
             if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {

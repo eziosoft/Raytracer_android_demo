@@ -1,5 +1,7 @@
 package models
 
+import android.util.Log
+import com.example.fps_raytrace.R
 import engine.*
 import maps.Map
 import kotlin.math.cos
@@ -23,28 +25,36 @@ data class Player(
     var dyingFrame: Int = 0,
     var state: PlayerState = PlayerState.IDLE,
     var timer: Int = 0,
-    val isMainPlayer: Boolean
+    val isMainPlayer: Boolean,
+    val sound: Sound? = null
 )
 
 fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
+
+   if(isMainPlayer) Log.d("aaa", "animate: ${this.state}")
+
+    if(this.shootingFrame>0) shoot() // finish shooting animation
+
+    timer++
+
     state?.let {
         this.state = it
     }
 
     when (this.state) {
         PlayerState.WALKING -> {
-            this.walk()
+            walk()
             if (!isMainPlayer) {
-                this.walkRandom(map, cellSize)
+                walkRandom(map, cellSize)
             }
         }
 
         PlayerState.SHOOTING -> {
-            this.shoot()
+            shoot()
         }
 
         PlayerState.DYING -> {
-            this.dying(5)
+            dying(5)
         }
 
         PlayerState.DEAD -> this.dead()
@@ -60,7 +70,6 @@ private fun Player.walk() {
     if (this.timer % 7 == 0) {
         this.walkingFrame = (this.walkingFrame + 1) % 4
     }
-    this.timer++
 }
 
 private fun Player.shoot(frameCount: Int = 6) {
@@ -69,10 +78,14 @@ private fun Player.shoot(frameCount: Int = 6) {
         shootingFrame = 0
         return
     }
+
+    this.state = PlayerState.SHOOTING
+
     if (this.timer % 7 == 0) {
-        this.shootingFrame = (this.shootingFrame + 1)
+        this.shootingFrame++
     }
-    this.timer++
+
+    Log.d("aaa", "shoot: $shootingFrame $timer")
 }
 
 private fun Player.dying(frameCount: Int) {
@@ -81,11 +94,9 @@ private fun Player.dying(frameCount: Int) {
         this.dead()
         return
     }
-    if (this.timer % 7 == 0) {
-        this.dyingFrame = (this.dyingFrame + 1)
+    if (this.timer % 4 == 0) {
+        this.dyingFrame ++
     }
-    this.timer++
-
 }
 
 private fun Player.dead() {
@@ -125,13 +136,29 @@ fun Player.walkRandom(map: Map, cellSize: Int, buffer: Float = 0.2f) {
     var rotation = this.rotationRad
 
     // Check for wall collisions and apply buffer zone
-    if (isWall(newX + dx.sign * buffer, this.y, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+    if (isWall(
+            newX + dx.sign * buffer,
+            this.y,
+            map.MAP,
+            map.MAP_X,
+            map.MAP_Y,
+            cellSize
+        ) == WallType.NONE
+    ) {
         this.x = newX
     } else {
         rotation = (rotation + 10.toRadian()).normalizeAngle()
     }
 
-    if (isWall(this.x, newY + dy.sign * buffer, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+    if (isWall(
+            this.x,
+            newY + dy.sign * buffer,
+            map.MAP,
+            map.MAP_X,
+            map.MAP_Y,
+            cellSize
+        ) == WallType.NONE
+    ) {
         this.y = newY
     } else {
         rotation = (rotation + 10.toRadian()).normalizeAngle()
