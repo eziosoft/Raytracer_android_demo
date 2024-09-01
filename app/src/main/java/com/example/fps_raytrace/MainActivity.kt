@@ -1,6 +1,7 @@
 package com.example.fps_raytrace
 
 import RaytracerEngine
+import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,11 +23,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import engine.Screen
 import kotlinx.coroutines.delay
+import java.nio.ByteBuffer
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
 const val W = 640
-const val H = 480
+const val H = 400
 const val FPS = 30
 
 class MainActivity : ComponentActivity() {
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        raytracerEngine = RaytracerEngine(context = this, width = W, height = H)
+        raytracerEngine = RaytracerEngine(context = applicationContext, width = W, height = H)
 
 
         setContent {
@@ -47,30 +49,40 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun RayCaster(raytracer: RaytracerEngine) {
-        val screenBitmap = produceState(initialValue = Screen(W, H).getBitmap().asImageBitmap()) {
+        // Create a single Bitmap instance that will be reused
+        val bitmap = remember { Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888) }
+        // Convert the Bitmap to an ImageBitmap once
+        val imageBitmap = remember(bitmap) { mutableStateOf(bitmap.asImageBitmap()) }
+
+        // LaunchedEffect for the game loop
+        LaunchedEffect(Unit) {
             while (true) {
                 val renderTime = measureTime {
                     raytracer.gameLoop(
                         pressedKeys = emptySet(),
-                        onFrame = { bitmap ->
-                            value = bitmap.getBitmap().asImageBitmap()
+                        onFrame = { newBitmap ->
+                            bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(newBitmap.getByteArray()))
+                            imageBitmap.value = bitmap.asImageBitmap()
                         }
                     )
                 }
+                // Delay to control FPS
                 delay((1000 - renderTime.toLong(DurationUnit.MILLISECONDS)) / FPS.toLong())
             }
         }
 
+        // Display the ImageBitmap
         Image(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black),
-            bitmap = screenBitmap.value,
+            bitmap = imageBitmap.value,
             contentDescription = null,
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.High,
         )
     }
+
 
 
 }

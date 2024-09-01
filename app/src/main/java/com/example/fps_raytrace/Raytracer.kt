@@ -47,8 +47,7 @@ class RaytracerEngine(
     private val wallDepths = FloatArray(width) // depth buffer
 
     private val screen = Screen(width, height)
-
-    val crossColor = Screen.Color(255, 255, 255)
+    private val sound = Sound(context)
 
     private val playerPosition =
         findPositionBasedOnMapIndex(
@@ -71,6 +70,14 @@ class RaytracerEngine(
     //create enemies
     private val enemies = currentMap.getEnemiesFromMap(cellSize = cellSize)
 
+
+    init {
+        sound.loadSound(R.raw.soundtrack)
+        sound.loadSound(R.raw.gunshot)
+        sound.loadSound(R.raw.mandeathscream)
+
+        sound.playMp3(R.raw.soundtrack, true)
+    }
 
     fun gameLoop(pressedKeys: Set<Moves>, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
@@ -139,26 +146,47 @@ class RaytracerEngine(
 
 //    drawText(bitmap, 10, 10, renderTime.toString(unit = DurationUnit.MILLISECONDS, decimals = 2), Color.White)
 
-        val totalTime = castRayTime + drawSpriteTime + drawMapTime + drawPistolTime + drawCrossTime + animateTime
-        println("total: ${totalTime.toInt(DurationUnit.MILLISECONDS)}ms,castRayTime: ${castRayTime.toInt(DurationUnit.MICROSECONDS)}, " +
-                "drawSpriteTime: ${drawSpriteTime.toInt(DurationUnit.MICROSECONDS)}, " +
-                "drawMapTime: ${drawMapTime.toInt(DurationUnit.MICROSECONDS)}, " +
-                "drawPistolTime: ${drawPistolTime.toInt(DurationUnit.MICROSECONDS)}, " +
-                "drawCrossTime: ${drawCrossTime.toInt(DurationUnit.MICROSECONDS)}, " +
-                "animateTime: ${animateTime.toInt(DurationUnit.MICROSECONDS)}")
+        val totalTime =
+            castRayTime + drawSpriteTime + drawMapTime + drawPistolTime + drawCrossTime + animateTime
+//        println(
+//            "total: ${totalTime.toInt(DurationUnit.MILLISECONDS)}ms,castRayTime: ${
+//                castRayTime.toInt(
+//                    DurationUnit.MICROSECONDS
+//                )
+//            }, " +
+//                    "drawSpriteTime: ${drawSpriteTime.toInt(DurationUnit.MICROSECONDS)}, " +
+//                    "drawMapTime: ${drawMapTime.toInt(DurationUnit.MICROSECONDS)}, " +
+//                    "drawPistolTime: ${drawPistolTime.toInt(DurationUnit.MICROSECONDS)}, " +
+//                    "drawCrossTime: ${drawCrossTime.toInt(DurationUnit.MICROSECONDS)}, " +
+//                    "animateTime: ${animateTime.toInt(DurationUnit.MICROSECONDS)}"
+//        )
 
         return screen
     }
 
     private fun drawCross(screen: Screen) {
         val crossSize = 10
-
-
         val x = width / 2 - crossSize / 2
         val y = height / 2 - crossSize / 2
 
-        screen.drawLine(x, y, x + crossSize, y + crossSize, crossColor)
-        screen.drawLine(x + crossSize, y, x, y + crossSize, crossColor)
+        screen.drawLine(
+            x,
+            y,
+            x + crossSize,
+            y + crossSize,
+            255,
+            255,
+            255
+        )
+        screen.drawLine(
+            x + crossSize,
+            y,
+            x,
+            y + crossSize,
+            255,
+            255,
+            255
+        )
     }
 
 
@@ -230,18 +258,21 @@ class RaytracerEngine(
 
                             val texIndex = (texY * guardSprite.SPRITE_SIZE + texX) * 3
 
-                            val texColor = Screen.Color(
-                                texture[texIndex],
-                                texture[texIndex + 1],
-                                texture[texIndex + 2],
-                            )
+                            val r = texture[texIndex]
+                            val g = texture[texIndex + 1]
+                            val b = texture[texIndex + 2]
 
-                            if (texColor != guardSprite.TRANSPARENT_COLOR) {
+                            if (r != guardSprite.TRANSPARENT_COLOR.red || g != guardSprite.TRANSPARENT_COLOR.green || b != guardSprite.TRANSPARENT_COLOR.blue) {
                                 // Apply distance-based shading
                                 val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
-                                texColor.darken(intensity)
 
-                                screen.setRGB(x, y, texColor)
+                                screen.setRGB(
+                                    x,
+                                    y,
+                                    r.darkenColor(intensity),
+                                    g.darkenColor(intensity),
+                                    b.darkenColor(intensity)
+                                )
                             }
                         }
                     }
@@ -342,7 +373,8 @@ class RaytracerEngine(
                         wallDepths[x] = perpWallDist
 
                         // Fish-eye correction
-                        val correctedWallDist = perpWallDist * cos(player.rotationRad - (player.rotationRad - fovRad / 2 + x * rayStep))
+                        val correctedWallDist =
+                            perpWallDist * cos(player.rotationRad - (player.rotationRad - fovRad / 2 + x * rayStep))
 
                         // Calculate height of the line to draw on screen
                         val lineHeight = (height / correctedWallDist).toInt()
@@ -375,17 +407,21 @@ class RaytracerEngine(
                             texPos += step
 
                             val texIndex = (texY * worldTextureSize + texX) * 3
-                            val texColor = Screen.Color(
-                                wallTexture[texIndex],
-                                wallTexture[texIndex + 1],
-                                wallTexture[texIndex + 2],
+                            val r = wallTexture[texIndex]
+                            val g = wallTexture[texIndex + 1]
+                            val b = wallTexture[texIndex + 2]
+
+                            val intensity =
+                                1.0f - ((correctedWallDist / 20.0f) + 0.4f * side).coerceAtMost(1f)
+
+
+                            bitmap.setRGB(
+                                x,
+                                y,
+                                r.darkenColor(intensity),
+                                g.darkenColor(intensity),
+                                b.darkenColor(intensity)
                             )
-
-                            val intensity = 1.0f - ((correctedWallDist / 20.0f) + 0.4f * side).coerceAtMost(1f)
-                            texColor.darken(intensity)
-
-
-                            bitmap.setRGB(x, y, texColor)
                         }
 
                         // Ceiling casting
@@ -396,19 +432,25 @@ class RaytracerEngine(
                                 val ceilingX = player.x / cellSize + ceilingDistance * rayDirX
                                 val ceilingY = player.y / cellSize + ceilingDistance * rayDirY
 
-                                val ceilingTexX = ((ceilingX - floor(ceilingX)) * worldTextureSize).toInt()
-                                val ceilingTexY = ((ceilingY - floor(ceilingY)) * worldTextureSize).toInt()
+                                val ceilingTexX =
+                                    ((ceilingX - floor(ceilingX)) * worldTextureSize).toInt()
+                                val ceilingTexY =
+                                    ((ceilingY - floor(ceilingY)) * worldTextureSize).toInt()
 
                                 val texIndex = (ceilingTexY * worldTextureSize + ceilingTexX) * 3
                                 if (texIndex >= 0) {
-                                    val texColor = Screen.Color(
-                                        cellingTexture[texIndex],
-                                        cellingTexture[texIndex + 1],
-                                        cellingTexture[texIndex + 2],
-                                    )
+                                    val r = cellingTexture[texIndex]
+                                    val g = cellingTexture[texIndex + 1]
+                                    val b = cellingTexture[texIndex + 2]
 
-                                    texColor.darken(0.5f)
-                                    bitmap.setRGB(x, y, texColor)
+
+                                    bitmap.setRGB(
+                                        x,
+                                        y,
+                                        r.darkenColor(0.5f),
+                                        g.darkenColor(0.5f),
+                                        b.darkenColor(0.5f)
+                                    )
                                 }
                             }
                         }
@@ -421,19 +463,24 @@ class RaytracerEngine(
                                 val floorX = player.x / cellSize + floorDistance * rayDirX
                                 val floorY = player.y / cellSize + floorDistance * rayDirY
 
-                                val floorTexX = (floorX * worldTextureSize % worldTextureSize).toInt()
-                                val floorTexY = (floorY * worldTextureSize % worldTextureSize).toInt()
+                                val floorTexX =
+                                    (floorX * worldTextureSize % worldTextureSize).toInt()
+                                val floorTexY =
+                                    (floorY * worldTextureSize % worldTextureSize).toInt()
 
                                 val texIndex = (floorTexY * worldTextureSize + floorTexX) * 3
                                 if (texIndex >= 0) {
-                                    val texColor = Screen.Color(
-                                        floorTexture[texIndex],
-                                        floorTexture[texIndex + 1],
-                                        floorTexture[texIndex + 2],
-                                    )
+                                    val r = floorTexture[texIndex]
+                                    val g = floorTexture[texIndex + 1]
+                                    val b = floorTexture[texIndex + 2]
 
-                                    texColor.darken(0.5f)
-                                    bitmap.setRGB(x, y, texColor)
+                                    bitmap.setRGB(
+                                        x,
+                                        y,
+                                        r.darkenColor(0.5f),
+                                        g.darkenColor(0.5f),
+                                        b.darkenColor(0.5f)
+                                    )
                                 }
                             }
                         }
@@ -498,6 +545,7 @@ class RaytracerEngine(
             ) == WallType.NONE
         ) {
             player.x = newX
+            sound.playSound(R.raw.gunshot1)
         }
 
         if (isWall(
@@ -570,13 +618,13 @@ class RaytracerEngine(
 
     private fun shootAndCheckHits() {
         player.animate(state = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
-        playSound("sound/gunshot1.mp3")
+        sound.playSound(R.raw.gunshot1)
 
         enemies.forEach { enemy ->
             if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {
                 if (enemy.state != PlayerState.DEAD) {
                     enemy.state = PlayerState.DYING
-                    playSound("sound/mandeathscream.mp3")
+                    sound.playSound(R.raw.mandeathscream)
                 }
             }
         }

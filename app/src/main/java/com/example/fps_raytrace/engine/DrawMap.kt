@@ -23,16 +23,30 @@ fun drawMap(
     for (y: Int in 0 until map.MAP_Y) {
         for (x in 0 until map.MAP_X) {
 
+            val r = if (map.MAP[y * map.MAP_X + x] > 0) {
+                filledColor.red
+            } else {
+                emptyColor.red
+            }
+
+            val g = if (map.MAP[y * map.MAP_X + x] > 0) {
+                filledColor.green
+            } else {
+                emptyColor.green
+            }
+
+            val b = if (map.MAP[y * map.MAP_X + x] > 0) {
+                filledColor.blue
+            } else {
+                emptyColor.blue
+            }
+
             screen.drawFilledRect(
                 x = xOffset + x * cellSize,
                 y = yOffset + y * cellSize,
                 w = cellSize,
                 h = cellSize,
-                color = if (map.MAP[y * map.MAP_X + x] > 0) {
-                    filledColor
-                } else {
-                    emptyColor
-                }
+                r, g, b
             )
         }
     }
@@ -42,7 +56,9 @@ fun drawMap(
         player,
         xOffset = xOffset,
         yOffset = yOffset,
-        color = mapPlayerColor,
+        r = mapPlayerColor.red,
+        g = mapPlayerColor.green,
+        b = mapPlayerColor.blue,
         playerSize = playerSize
     )
 
@@ -52,7 +68,9 @@ fun drawMap(
             enemy,
             xOffset = xOffset,
             yOffset = yOffset,
-            color = enemyMapColor,
+            r = enemyMapColor.red,
+            g = enemyMapColor.green,
+            b = enemyMapColor.blue,
             playerSize = playerSize
         )
     }
@@ -63,7 +81,9 @@ private fun drawPlayerOnMap(
     player: Player,
     xOffset: Int,
     yOffset: Int,
-    color: Screen.Color,
+    r: Int,
+    g: Int,
+    b: Int,
     playerSize: Float
 ) {
     bitmap.drawFilledRect(
@@ -71,13 +91,13 @@ private fun drawPlayerOnMap(
         yOffset + (player.y - playerSize / 2).toInt(),
         playerSize.toInt(),
         playerSize.toInt(),
-        color
+        r, g, b
     )
     bitmap.drawLine(
         xOffset + player.x.toInt(),
         yOffset + player.y.toInt(),
         (xOffset + player.x + cos(player.rotationRad.toDouble()).toFloat() * playerSize * 2).toInt(),
         (yOffset + player.y + sin(player.rotationRad.toDouble()).toFloat() * playerSize * 2).toInt(),
-        color
+        r, g, b
     )
 }
