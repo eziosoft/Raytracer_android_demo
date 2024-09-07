@@ -31,7 +31,7 @@ data class Player(
 
 fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
 
-   if(isMainPlayer) Log.d("aaa", "animate: ${this.state}")
+//   if(isMainPlayer) Log.d("aaa", "animate: ${this.state}")
 
     if(this.shootingFrame>0) shoot() // finish shooting animation
 
@@ -81,7 +81,7 @@ private fun Player.shoot(frameCount: Int = 6) {
 
     this.state = PlayerState.SHOOTING
 
-    if (this.timer % 7 == 0) {
+    if (this.timer % 4 == 0) {
         this.shootingFrame++
     }
 
@@ -94,7 +94,7 @@ private fun Player.dying(frameCount: Int) {
         this.dead()
         return
     }
-    if (this.timer % 4 == 0) {
+    if (this.timer % 7 == 0) {
         this.dyingFrame ++
     }
 }
