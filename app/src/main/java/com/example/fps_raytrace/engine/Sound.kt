@@ -37,4 +37,15 @@ class Sound(private val context: Context) {
         }
     }
 
+    fun stopMusic() {
+        mediaPlayer?.let {
+            it.stop()
+            it.release()
+        }
+    }
+
+    fun release() {
+        soundPool.release()
+    }
+
 }

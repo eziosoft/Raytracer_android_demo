@@ -74,7 +74,7 @@ class RaytracerEngine(
     private val enemies = currentMap.getEnemiesFromMap(cellSize = cellSize)
 
 
-    init {
+    fun start(){
         sound.loadSound(R.raw.soundtrack)
         sound.loadSound(R.raw.gunshot1)
         sound.loadSound(R.raw.mandeathscream)
@@ -670,6 +670,11 @@ class RaytracerEngine(
                 }
             }
         }
+    }
+
+    fun dispose() {
+        sound.stopMusic()
+        sound.release()
     }
 }
 
