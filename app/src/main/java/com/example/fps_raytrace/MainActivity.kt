@@ -68,14 +68,16 @@ class MainActivity : ComponentActivity() {
                     Log.d("aaa", "onCreate: x = $x, y = $y")
 
                     pressedKeys.clear()
-                    when {
-                        x > 0.5 -> pressedKeys.add(Moves.RIGHT)
-                        x < -0.5 -> pressedKeys.add(Moves.LEFT)
-                    }
-                    when {
-                        y > 0.5 -> pressedKeys.add(Moves.DOWN)
-                        y < -0.5 -> pressedKeys.add(Moves.UP)
-                    }
+//                    when {
+//                        x > 0.5 -> pressedKeys.add(Moves.RIGHT)
+//                        x < -0.5 -> pressedKeys.add(Moves.LEFT)
+//                    }
+//                    when {
+//                        y > 0.5 -> pressedKeys.add(Moves.DOWN)
+//                        y < -0.5 -> pressedKeys.add(Moves.UP)
+//                    }
+
+                    raytracerEngine.movePlayer(x / 30f, -y / 5f)
                 }
             }
         }
@@ -119,9 +121,13 @@ class MainActivity : ComponentActivity() {
                 .background(Color.Black)
                 .clickable {
                     scope.launch {
-                        pressedKeys.add(Moves.SHOOT)
-                        delay(200)
-                        pressedKeys.clear()
+                        repeat(8) {
+                            raytracerEngine.shootAndCheckHits()
+                            delay(10)
+                        }
+//                        pressedKeys.add(Moves.SHOOT)
+//                        delay(200)
+//                        pressedKeys.clear()
                     }
                 },
             bitmap = imageBitmap.value,

@@ -12,6 +12,7 @@ import maps.Map
 import models.*
 import sprites.GuardSprite
 import sprites.PistolSprite
+import java.time.Year
 import kotlin.math.*
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
@@ -74,7 +75,7 @@ class RaytracerEngine(
     private val enemies = currentMap.getEnemiesFromMap(cellSize = cellSize)
 
 
-    fun start(){
+    fun start() {
         sound.loadSound(R.raw.soundtrack)
         sound.loadSound(R.raw.gunshot1)
         sound.loadSound(R.raw.mandeathscream)
@@ -315,7 +316,8 @@ class RaytracerEngine(
             val deltaDistYCache = FloatArray(rayCount)
 
             for (x in 0 until rayCount) {
-                val rayAngle = player.rotationRad - fovRad / 2 + x * rayStep
+                val rayAngle = player.rotationRad + (x - rayCount / 2) * rayStep
+
                 sinCache[x] = sin(rayAngle)
                 cosCache[x] = cos(rayAngle)
                 deltaDistXCache[x] = abs(1 / cosCache[x])
@@ -400,15 +402,14 @@ class RaytracerEngine(
                             wallDepths[x] = perpWallDist
 
                             // Fish-eye correction
-                            val correctedWallDist =
-                                perpWallDist * cos(player.rotationRad - (player.rotationRad - fovRad / 2 + x * rayStep))
+                            val correctedWallDist = perpWallDist// * cos(x * rayStep - fovRad / 2)
 
                             // Calculate height of the line to draw on screen
                             val lineHeight = (height / correctedWallDist).toInt()
 
                             // Calculate lowest and highest pixel to fill in current stripe
-                            val drawStart = (-lineHeight / 2 + height / 2).coerceAtLeast(0)
-                            val drawEnd = (lineHeight / 2 + height / 2).coerceAtMost(height - 1)
+                            val drawStart = max(0, -lineHeight / 2 + height / 2)
+                            val drawEnd = min(height - 1, lineHeight / 2 + height / 2)
 
 
                             if (castWalls) {                                // Texture mapping for walls
@@ -418,8 +419,9 @@ class RaytracerEngine(
                                     player.x / cellSize + correctedWallDist * rayDirX
                                 }
                                 val finalWallX = wallX - floor(wallX)
+                                var texX =
+                                    ((finalWallX * worldTextureSize).toInt()) % worldTextureSize
 
-                                var texX = (finalWallX * worldTextureSize).toInt()
                                 if ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) {
                                     texX = worldTextureSize - texX - 1
                                 }
@@ -532,38 +534,86 @@ class RaytracerEngine(
             }
         }
 
+
+    fun movePlayer(x: Float, y: Float) {
+        var dx = 0f
+        var dy = 0f
+        var dr = 0f
+
+        dx += y * cos(player.rotationRad)
+        dy += y * sin(player.rotationRad)
+
+        dr = x
+
+        player.rotationRad += dr.normalizeAngle()
+
+        val newX = player.x + dx
+        val newY = player.y + dy
+
+        if (isWall(
+                newX,
+                player.y,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.NONE
+        ) {
+            player.x = newX
+        }
+
+        if (isWall(
+                player.x,
+                newY,
+                currentMap.MAP,
+                currentMap.MAP_X,
+                currentMap.MAP_Y,
+                cellSize
+            ) == WallType.NONE
+        ) {
+            player.y = newY
+        }
+
+        openDoor(newX, newY)
+
+        // Exit
+        if (isExitTouched(newX, newY)) {
+            error("You win!")
+        }
+    }
+
     private fun movePlayer(pressedKeys: Set<Moves>) {
         var dx = 0f
         var dy = 0f
         var dr = 0f
 
-        if (Moves.UP in pressedKeys) { // Right arrow key
+        if (Moves.UP in pressedKeys) {
             dx += moveStep * cos(player.rotationRad)
             dy += moveStep * sin(player.rotationRad)
         }
-        if (Moves.DOWN in pressedKeys) { // Left arrow key
+        if (Moves.DOWN in pressedKeys) {
             dx -= moveStep * cos(player.rotationRad)
             dy -= moveStep * sin(player.rotationRad)
         }
 
-        if (Moves.MOVE_LEFT in pressedKeys) { // A key
+        if (Moves.MOVE_LEFT in pressedKeys) {
             dx -= moveStep * cos(player.rotationRad + 90.toRadian())
             dy -= moveStep * sin(player.rotationRad + 90.toRadian())
         }
 
-        if (Moves.MOVE_RIGHT in pressedKeys) { // D key
+        if (Moves.MOVE_RIGHT in pressedKeys) {
             dx += moveStep * cos(player.rotationRad + 90.toRadian())
             dy += moveStep * sin(player.rotationRad + 90.toRadian())
         }
 
-        if (Moves.LEFT in pressedKeys) { // Up arrow key
+        if (Moves.LEFT in pressedKeys) {
             dr -= rotationStepRad
         }
-        if (Moves.RIGHT in pressedKeys) { // Down arrow key
+        if (Moves.RIGHT in pressedKeys) {
             dr += rotationStepRad
         }
 
-        if (Moves.SHOOT in pressedKeys) { // Space key
+        if (Moves.SHOOT in pressedKeys) {
             shootAndCheckHits()
         }
 
@@ -655,7 +705,7 @@ class RaytracerEngine(
         }
     }
 
-    private fun shootAndCheckHits() {
+     fun shootAndCheckHits() {
         player.animate(state = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
 
         if (player.shootingFrame == 0) {

@@ -33,7 +33,7 @@ fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
 
 //   if(isMainPlayer) Log.d("aaa", "animate: ${this.state}")
 
-    if(this.shootingFrame>0) shoot() // finish shooting animation
+    if (this.shootingFrame > 0) shoot() // finish shooting animation
 
     timer++
 
@@ -95,7 +95,7 @@ private fun Player.dying(frameCount: Int) {
         return
     }
     if (this.timer % 7 == 0) {
-        this.dyingFrame ++
+        this.dyingFrame++
     }
 }
 

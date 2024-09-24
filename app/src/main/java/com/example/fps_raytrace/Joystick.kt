@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlin.math.absoluteValue
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -25,7 +28,11 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 @Composable
-fun Joystick(modifier: Modifier = Modifier, out: (Float, Float) -> Unit) {
+fun Joystick(
+    modifier: Modifier = Modifier,
+    deadband: Float = 0.3f,
+    out: (Float, Float) -> Unit
+) {
     var joystickCenter by remember { mutableStateOf(Offset.Zero) }
     var handlePosition by remember { mutableStateOf(Offset.Zero) }
     var isTouched by remember { mutableStateOf(false) }
@@ -33,7 +40,7 @@ fun Joystick(modifier: Modifier = Modifier, out: (Float, Float) -> Unit) {
 
     Box(
         modifier = modifier
-            .size(200.dp)
+            .size(250.dp)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { isTouched = true },
@@ -56,10 +63,6 @@ fun Joystick(modifier: Modifier = Modifier, out: (Float, Float) -> Unit) {
                             joystickCenter.y + radius * sin(angle)
                         )
                     }
-                    out(
-                        (handlePosition.x - joystickCenter.x) / radius,
-                        (handlePosition.y - joystickCenter.y) / radius
-                    )
                     change.consume()
                 }
             }
@@ -81,12 +84,25 @@ fun Joystick(modifier: Modifier = Modifier, out: (Float, Float) -> Unit) {
     }
 
     LaunchedEffect(isTouched) {
+        while (isActive && isTouched) {
+            val dx = (handlePosition.x - joystickCenter.x) / radius
+            val dy = (handlePosition.y - joystickCenter.y) / radius
+
+            // Apply deadband
+            val outputX = if (dx.absoluteValue < deadband) 0f else dx
+            val outputY = if (dy.absoluteValue < deadband) 0f else dy
+
+            out(outputX, outputY)
+            delay(10) // Adjust the interval as needed
+        }
         if (!isTouched) {
             handlePosition = joystickCenter
             out(0f, 0f)
         }
     }
 }
+
+
 @Composable
 @Preview
 private fun JoystickPreview() {
