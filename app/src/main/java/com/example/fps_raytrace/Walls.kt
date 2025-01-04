@@ -1,6 +1,7 @@
+package com.example.fps_raytrace
+
 import android.content.Context
-import com.example.fps_raytrace.R
-import engine.textures.readPpmImage
+import com.example.fps_raytrace.engine.textures.readPpmImage
 
 class Walls(context: Context) {
     private val wallTexture1 = readPpmImage(context = context, path = R.raw.wall1)

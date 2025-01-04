@@ -1,11 +1,11 @@
-package sprites
+package com.example.fps_raytrace.sprites
 
 import android.content.Context
 import com.example.fps_raytrace.R
-import engine.Screen
-import engine.textures.Sprite
-import engine.textures.readPpmImage
-import models.PlayerState
+import com.example.fps_raytrace.engine.Screen
+import com.example.fps_raytrace.engine.textures.Sprite
+import com.example.fps_raytrace.engine.textures.readPpmImage
+import com.example.fps_raytrace.models.PlayerState
 
 
 class GuardSprite(context: Context) : Sprite {

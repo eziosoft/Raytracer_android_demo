@@ -1,17 +1,10 @@
 package com.example.fps_raytrace
 
-import Moves
-import RaytracerEngine
 import android.graphics.Bitmap
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
@@ -20,7 +13,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,15 +60,6 @@ class MainActivity : ComponentActivity() {
                     Log.d("aaa", "onCreate: x = $x, y = $y")
 
                     pressedKeys.clear()
-//                    when {
-//                        x > 0.5 -> pressedKeys.add(Moves.RIGHT)
-//                        x < -0.5 -> pressedKeys.add(Moves.LEFT)
-//                    }
-//                    when {
-//                        y > 0.5 -> pressedKeys.add(Moves.DOWN)
-//                        y < -0.5 -> pressedKeys.add(Moves.UP)
-//                    }
-
                     raytracerEngine.movePlayer(x / 30f, -y / 5f)
                 }
             }
@@ -125,9 +108,6 @@ class MainActivity : ComponentActivity() {
                             raytracerEngine.shootAndCheckHits()
                             delay(10)
                         }
-//                        pressedKeys.add(Moves.SHOOT)
-//                        delay(200)
-//                        pressedKeys.clear()
                     }
                 },
             bitmap = imageBitmap.value,

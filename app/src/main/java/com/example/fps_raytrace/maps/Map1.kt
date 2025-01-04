@@ -1,6 +1,6 @@
-package maps
+package com.example.fps_raytrace.maps
 
-object Map1:Map {
+object Map1: Map {
      override val MAP_X = 64
      override val MAP_Y = 64
 

@@ -1,7 +1,7 @@
-package engine
+package com.example.fps_raytrace.engine
 
-import maps.Map
-import models.Player
+import com.example.fps_raytrace.maps.Map
+import com.example.fps_raytrace.models.Player
 import kotlin.math.cos
 import kotlin.math.sin
 

@@ -1,9 +1,13 @@
-package models
+package com.example.fps_raytrace.models
 
 import android.util.Log
-import com.example.fps_raytrace.R
-import engine.*
-import maps.Map
+import com.example.fps_raytrace.engine.PI
+import com.example.fps_raytrace.engine.Sound
+import com.example.fps_raytrace.engine.WallType
+import com.example.fps_raytrace.engine.isWall
+import com.example.fps_raytrace.engine.normalizeAngle
+import com.example.fps_raytrace.engine.toRadian
+import com.example.fps_raytrace.maps.Map
 import kotlin.math.cos
 import kotlin.math.sign
 import kotlin.math.sin

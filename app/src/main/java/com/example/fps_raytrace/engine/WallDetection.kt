@@ -1,4 +1,4 @@
-package engine
+package com.example.fps_raytrace.engine
 
 enum class WallType {
     NONE,
