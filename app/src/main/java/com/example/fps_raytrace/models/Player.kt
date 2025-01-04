@@ -34,11 +34,7 @@ data class Player(
 )
 
 fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
-
-//   if(isMainPlayer) Log.d("aaa", "animate: ${this.state}")
-
-    if (this.shootingFrame > 0) shoot() // finish shooting animation
-
+//   if(isMainPlayer) Log.d("bbb", "animate: ${this.state}")
     timer++
 
     state?.let {
@@ -77,15 +73,15 @@ private fun Player.walk() {
 }
 
 private fun Player.shoot(frameCount: Int = 6) {
-    if (this.shootingFrame >= frameCount - 1) {
-        this.state = PlayerState.WALKING
+    state = PlayerState.SHOOTING
+
+    if (shootingFrame >= frameCount - 1) {
+        state = PlayerState.WALKING
         shootingFrame = 0
         return
     }
 
-    this.state = PlayerState.SHOOTING
-
-    if (this.timer % 4 == 0) {
+    if (this.timer % 10 == 0) {
         this.shootingFrame++
     }
 

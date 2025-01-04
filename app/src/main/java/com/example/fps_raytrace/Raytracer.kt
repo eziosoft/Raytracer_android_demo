@@ -103,7 +103,7 @@ class RaytracerEngine(
             enemy.animate(map = currentMap, cellSize = cellSize)
         }
 
-        player.animate(state = PlayerState.WALKING, map = currentMap, cellSize = cellSize)
+        player.animate(state = player.state, map = currentMap, cellSize = cellSize)
         movePlayer(pressedKeys)
         onFrame(generateFrame())
     }
