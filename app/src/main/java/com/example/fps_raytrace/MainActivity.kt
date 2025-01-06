@@ -135,9 +135,12 @@ class MainActivity : ComponentActivity() {
         }
 
         // Set the uniform values to the shader
-        LaunchedEffect(time.value) {
+        LaunchedEffect(time.value, noiseIntensity) {
             runtimeShader.setFloatUniform("time", time.value)
             runtimeShader.setFloatUniform("noiseIntensity", noiseIntensity)
+            runtimeShader.setFloatUniform("displacement", (noiseIntensity - 0.2f) * 50f)
+            runtimeShader.setFloatUniform("brightness", noiseIntensity - 0.4f)
+            Log.d("aaa", "RayCaster: noiseIntensity = $noiseIntensity")
         }
 
         // Display the ImageBitmap
@@ -160,16 +163,15 @@ class MainActivity : ComponentActivity() {
                             raytracerEngine.shootAndCheckHits()
                             scope.launch {
                                 noiseIntensity = 1.0f
-                                delay(100) // Duration of the noise effect
+                                delay(200) // Duration of the noise effect
                                 noiseIntensity = 0.4f
                             }
                         }
                     )
-                }
-                ,
+                },
             bitmap = imageBitmap.value,
             contentDescription = null,
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.FillBounds,
             filterQuality = FilterQuality.High,
         )
     }

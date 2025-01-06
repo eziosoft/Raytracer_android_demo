@@ -8,6 +8,8 @@ val analogShader = """
    uniform shader composable; // The base image shader
    uniform float time; // Time uniform for animated noise
    uniform float noiseIntensity; // Intensity of the noise effect
+   uniform float displacement; // Chromatic aberration displacement
+   uniform float brightness; // Brightness of the final image
 
    half rand(float2 coord) {
        // A pseudo-random function based on the coordinate
@@ -15,10 +17,12 @@ val analogShader = """
    }
 
    half4 main(float2 fragCoord) {
-       float displacement = 5.0; // Chromatic aberration displacement
-
-       // Apply chromatic aberration
        half3 color = composable.eval(fragCoord).rgb;
+       
+       // Apply brightness
+         color = color + color * brightness;
+         
+       // Apply chromatic aberration
        color.r = composable.eval(float2(fragCoord.x - displacement, fragCoord.y)).r;
        color.b = composable.eval(float2(fragCoord.x + displacement, fragCoord.y)).b;
 
@@ -29,7 +33,7 @@ val analogShader = """
        noise = (noise - 0.5) * noiseIntensity;
 
        // Apply noise to the RGB channels
-       half3 noisyColor = color + half3(noise, noise, 0.0);
+       half3 noisyColor = color + noise;
 
        // Return the final color with alpha preserved
        return half4(noisyColor, 1.0);
