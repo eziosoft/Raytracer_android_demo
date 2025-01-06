@@ -1,9 +1,11 @@
 package com.example.fps_raytrace.engine
 
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Screen(val w: Int, val h: Int) {
-    private val bitmap = ByteArray(w * h * 4)
+    val bitmap = ByteArray(w * h * 4)
 
     init {
         clear()
@@ -26,6 +28,15 @@ class Screen(val w: Int, val h: Int) {
         bitmap[offset + 1] = green.toByte()
         bitmap[offset + 2] = blue.toByte()
         bitmap[offset + 3] = alpha.toByte()
+    }
+
+    fun getRGB(x: Int, y: Int): IntArray {
+        val offset = (y * w + x) * 4
+        return intArrayOf(
+            bitmap[offset].toInt() and 0xFF,
+            bitmap[offset + 1].toInt() and 0xFF,
+            bitmap[offset + 2].toInt() and 0xFF
+        )
     }
 
     fun getByteArray(): ByteArray {

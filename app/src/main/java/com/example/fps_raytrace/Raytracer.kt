@@ -8,26 +8,33 @@ import com.example.fps_raytrace.engine.darkenColor
 import com.example.fps_raytrace.engine.drawMap
 import com.example.fps_raytrace.engine.isWall
 import com.example.fps_raytrace.engine.normalizeAngle
-import com.example.fps_raytrace.engine.toRadian
-import com.example.fps_raytrace.models.Player
-import com.example.fps_raytrace.models.PlayerState
-import com.example.fps_raytrace.models.animate
-import com.example.fps_raytrace.models.distanceTo
-import com.example.fps_raytrace.models.inShotAngle
 import com.example.fps_raytrace.engine.textures.readPpmImage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
+import com.example.fps_raytrace.engine.toRadian
 import com.example.fps_raytrace.maps.Map
 import com.example.fps_raytrace.maps.Map1
 import com.example.fps_raytrace.maps.MapObject
 import com.example.fps_raytrace.maps.findPositionBasedOnMapIndex
 import com.example.fps_raytrace.maps.getEnemiesFromMap
+import com.example.fps_raytrace.models.Player
+import com.example.fps_raytrace.models.PlayerState
+import com.example.fps_raytrace.models.animate
+import com.example.fps_raytrace.models.distanceTo
+import com.example.fps_raytrace.models.inShotAngle
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.PistolSprite
-import kotlin.math.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
@@ -98,14 +105,14 @@ class RaytracerEngine(
         sound.playMusic(R.raw.soundtrack, true)
     }
 
-    fun gameLoop(pressedKeys: Set<Moves>, onFrame: (Screen) -> Unit) {
+    fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
             enemy.animate(map = currentMap, cellSize = cellSize)
         }
 
         player.animate(state = player.state, map = currentMap, cellSize = cellSize)
         movePlayer(pressedKeys)
-        onFrame(generateFrame())
+        onFrame(effects(generateFrame()))
     }
 
 
@@ -228,7 +235,8 @@ class RaytracerEngine(
         var diff = angleToPlayer - enemy.rotationRad
 
         // Normalize the angle difference to be between -PI and PI
-        diff = (diff + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
+        diff =
+            (diff + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
 
         // Calculate the texture index, ensuring it falls within the valid range
         val numTextures = 8  // Assuming there are 8 textures in the textureSet
@@ -256,7 +264,8 @@ class RaytracerEngine(
         var angle = atan2(dy, dx) - player.rotationRad
 
         // Normalize angle to be between -PI and PI
-        angle = (angle + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
+        angle =
+            (angle + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
 
         // Check if enemy is within player's FOV
         if (abs(angle) < fovRad / 2) {
@@ -719,7 +728,7 @@ class RaytracerEngine(
         }
     }
 
-     fun shootAndCheckHits() {
+    fun shootAndCheckHits() {
         player.animate(state = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
 
         if (player.shootingFrame == 0) {
