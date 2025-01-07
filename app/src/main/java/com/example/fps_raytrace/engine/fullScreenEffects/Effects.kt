@@ -1,5 +1,6 @@
-package com.example.fps_raytrace.engine
+package com.example.fps_raytrace.engine.fullScreenEffects
 
+import com.example.fps_raytrace.engine.utils.Screen
 import kotlin.math.cos
 import kotlin.math.sin
 

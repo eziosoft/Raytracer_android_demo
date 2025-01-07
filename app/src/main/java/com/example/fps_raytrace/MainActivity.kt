@@ -3,21 +3,17 @@ package com.example.fps_raytrace
 import android.graphics.Bitmap
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,14 +37,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.fps_raytrace.engine.analogShader
+import com.example.fps_raytrace.composable.Joystick
+import com.example.fps_raytrace.engine.Moves
+import com.example.fps_raytrace.engine.RaytracerEngine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
-const val W = 640
-const val H = W * 8 / 16
-const val FPS = 30
+private const val WIDTH = 640
+private const val HEIGHT = WIDTH * 8 / 16
+private const val FPS = 30
 
 class MainActivity : ComponentActivity() {
 
@@ -63,18 +61,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        raytracerEngine = RaytracerEngine(context = applicationContext, width = W, height = H)
-
+        raytracerEngine =
+            RaytracerEngine(context = applicationContext, width = WIDTH, height = HEIGHT)
 
         setContent {
             Box(modifier = Modifier.fillMaxSize()) {
                 RayCaster(raytracer = raytracerEngine)
 
-                Joystick(
-                    modifier = Modifier.align(BottomEnd)
-                ) { x, y ->
-                    Log.d("aaa", "onCreate: x = $x, y = $y")
-
+                Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
                     pressedKeys.clear()
                     raytracerEngine.movePlayer(x / 30f, -y / 5f)
                 }
@@ -84,20 +78,25 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun RayCaster(raytracer: RaytracerEngine) {
-        // Create a single Bitmap instance that will be reused
-        val bitmap = remember { Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888) }
-        // Convert the Bitmap to an ImageBitmap once
-        val imageBitmap = remember(bitmap) { mutableStateOf(bitmap.asImageBitmap()) }
-
         val scope = rememberCoroutineScope()
 
-        var timer = 0L
+        // Create a single Bitmap instance that will be reused
+        val bitmap = remember { Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888) }
+        val imageBitmap = remember(bitmap) { mutableStateOf(bitmap.asImageBitmap()) }
+
+        var fpsTimer = remember { System.currentTimeMillis() }
+
+        // Create a RuntimeShader instance
+        val runtimeShader = remember { RuntimeShader(analogShader) }
+        // Noise intensity (you can make this a parameter if you want to control it dynamically)
+        var shaderNoiseIntensity by remember { mutableFloatStateOf(0.4f) }
+
 
         // LaunchedEffect for the game loop
         LaunchedEffect(isRunning) {
             while (isRunning) {
-                if (System.currentTimeMillis() > timer) {
-                    timer = (System.currentTimeMillis() + (1000 / FPS).toLong())
+                if (System.currentTimeMillis() > fpsTimer) {
+                    fpsTimer = (System.currentTimeMillis() + (1000 / FPS).toLong())
 
                     raytracer.gameLoop(
                         pressedKeys = pressedKeys,
@@ -116,14 +115,7 @@ class MainActivity : ComponentActivity() {
         }
 
 
-        val runtimeShader = remember {
-            RuntimeShader(analogShader)
-        }
-
-
-        // Noise intensity (you can make this a parameter if you want to control it dynamically)
-        var noiseIntensity by remember { mutableFloatStateOf(0.4f) }
-
+        // Create an Animatable for the time uniform
         val time = remember { Animatable(0f) }
         LaunchedEffect(Unit) {
             time.animateTo(
@@ -135,12 +127,11 @@ class MainActivity : ComponentActivity() {
         }
 
         // Set the uniform values to the shader
-        LaunchedEffect(time.value, noiseIntensity) {
+        LaunchedEffect(time.value, shaderNoiseIntensity) {
             runtimeShader.setFloatUniform("time", time.value)
-            runtimeShader.setFloatUniform("noiseIntensity", noiseIntensity)
-            runtimeShader.setFloatUniform("displacement", (noiseIntensity - 0.2f) * 50f)
-            runtimeShader.setFloatUniform("brightness", noiseIntensity - 0.4f)
-            Log.d("aaa", "RayCaster: noiseIntensity = $noiseIntensity")
+            runtimeShader.setFloatUniform("noiseIntensity", shaderNoiseIntensity)
+            runtimeShader.setFloatUniform("displacement", (shaderNoiseIntensity - 0.2f) * 50f)
+            runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity - 0.4f)
         }
 
         // Display the ImageBitmap
@@ -154,7 +145,6 @@ class MainActivity : ComponentActivity() {
                         )
                         .asComposeRenderEffect()
                 }
-
                 .fillMaxSize()
                 .background(Color.Black)
                 .pointerInput(Unit) {
@@ -162,9 +152,9 @@ class MainActivity : ComponentActivity() {
                         onTap = {
                             raytracerEngine.shootAndCheckHits()
                             scope.launch {
-                                noiseIntensity = 1.0f
+                                shaderNoiseIntensity = 1.0f
                                 delay(200) // Duration of the noise effect
-                                noiseIntensity = 0.4f
+                                shaderNoiseIntensity = 0.4f
                             }
                         }
                     )

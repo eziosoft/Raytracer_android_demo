@@ -1,12 +1,12 @@
-package com.example.fps_raytrace.models
+package com.example.fps_raytrace.engine
 
 import android.util.Log
-import com.example.fps_raytrace.engine.PI
-import com.example.fps_raytrace.engine.Sound
-import com.example.fps_raytrace.engine.WallType
-import com.example.fps_raytrace.engine.isWall
-import com.example.fps_raytrace.engine.normalizeAngle
-import com.example.fps_raytrace.engine.toRadian
+import com.example.fps_raytrace.engine.utils.PI
+import com.example.fps_raytrace.engine.utils.Sound
+import com.example.fps_raytrace.engine.utils.WallType
+import com.example.fps_raytrace.engine.utils.isWall
+import com.example.fps_raytrace.engine.utils.normalizeAngle
+import com.example.fps_raytrace.engine.utils.toRadian
 import com.example.fps_raytrace.maps.Map
 import kotlin.math.cos
 import kotlin.math.sign
@@ -21,20 +21,19 @@ enum class PlayerState {
 }
 
 data class Player(
+    val isMainPlayer: Boolean,
+    var state: PlayerState = PlayerState.IDLE,
+    var timer: Int = 0,
     var x: Float,
     var y: Float,
     var rotationRad: Float = 0f,
     var walkingFrame: Int = 0,
     var shootingFrame: Int = 0,
     var dyingFrame: Int = 0,
-    var state: PlayerState = PlayerState.IDLE,
-    var timer: Int = 0,
-    val isMainPlayer: Boolean,
     val sound: Sound? = null
 )
 
 fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
-//   if(isMainPlayer) Log.d("bbb", "animate: ${this.state}")
     timer++
 
     state?.let {
@@ -66,7 +65,6 @@ fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
 }
 
 private fun Player.walk() {
-
     if (this.timer % 7 == 0) {
         this.walkingFrame = (this.walkingFrame + 1) % 4
     }
@@ -84,12 +82,9 @@ private fun Player.shoot(frameCount: Int = 6) {
     if (this.timer % 10 == 0) {
         this.shootingFrame++
     }
-
-    Log.d("aaa", "shoot: $shootingFrame $timer")
 }
 
 private fun Player.dying(frameCount: Int) {
-
     if (this.dyingFrame >= frameCount - 1) {
         this.dead()
         return

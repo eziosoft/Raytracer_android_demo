@@ -1,7 +1,6 @@
-package com.example.fps_raytrace.engine.textures
+package com.example.fps_raytrace.engine.utils
 
-import com.example.fps_raytrace.engine.Screen
-import com.example.fps_raytrace.models.PlayerState
+import com.example.fps_raytrace.engine.PlayerState
 
 
 interface Sprite {

@@ -2,10 +2,10 @@ package com.example.fps_raytrace.sprites
 
 import android.content.Context
 import com.example.fps_raytrace.R
-import com.example.fps_raytrace.engine.Screen
-import com.example.fps_raytrace.engine.textures.Sprite
-import com.example.fps_raytrace.engine.textures.readPpmImage
-import com.example.fps_raytrace.models.PlayerState
+import com.example.fps_raytrace.engine.utils.Screen
+import com.example.fps_raytrace.engine.utils.Sprite
+import com.example.fps_raytrace.engine.utils.readPpmImage
+import com.example.fps_raytrace.engine.PlayerState
 
 class PistolSprite(context: Context) : Sprite {
 

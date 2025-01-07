@@ -1,4 +1,4 @@
-package com.example.fps_raytrace.engine
+package com.example.fps_raytrace.engine.utils
 
 const val PI = 3.1415927f
 

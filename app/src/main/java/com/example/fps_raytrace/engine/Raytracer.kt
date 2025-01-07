@@ -1,25 +1,23 @@
-package com.example.fps_raytrace
+package com.example.fps_raytrace.engine
 
 import android.content.Context
-import com.example.fps_raytrace.engine.Screen
-import com.example.fps_raytrace.engine.Sound
-import com.example.fps_raytrace.engine.WallType
-import com.example.fps_raytrace.engine.darkenColor
-import com.example.fps_raytrace.engine.drawMap
-import com.example.fps_raytrace.engine.isWall
-import com.example.fps_raytrace.engine.normalizeAngle
-import com.example.fps_raytrace.engine.textures.readPpmImage
-import com.example.fps_raytrace.engine.toRadian
+import com.example.fps_raytrace.R
+import com.example.fps_raytrace.textures.Walls
+import com.example.fps_raytrace.engine.utils.PI
+import com.example.fps_raytrace.engine.utils.normalizeAngle
+import com.example.fps_raytrace.engine.utils.toRadian
+import com.example.fps_raytrace.engine.utils.readPpmImage
+import com.example.fps_raytrace.engine.map.drawMap
+import com.example.fps_raytrace.engine.utils.Screen
+import com.example.fps_raytrace.engine.utils.Sound
+import com.example.fps_raytrace.engine.utils.WallType
+import com.example.fps_raytrace.engine.utils.darkenColor
+import com.example.fps_raytrace.engine.utils.isWall
 import com.example.fps_raytrace.maps.Map
 import com.example.fps_raytrace.maps.Map1
 import com.example.fps_raytrace.maps.MapObject
 import com.example.fps_raytrace.maps.findPositionBasedOnMapIndex
 import com.example.fps_raytrace.maps.getEnemiesFromMap
-import com.example.fps_raytrace.models.Player
-import com.example.fps_raytrace.models.PlayerState
-import com.example.fps_raytrace.models.animate
-import com.example.fps_raytrace.models.distanceTo
-import com.example.fps_raytrace.models.inShotAngle
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.PistolSprite
 import kotlinx.coroutines.Dispatchers
@@ -236,12 +234,12 @@ class RaytracerEngine(
 
         // Normalize the angle difference to be between -PI and PI
         diff =
-            (diff + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
+            (diff + PI) % (2 * PI) - PI
 
         // Calculate the texture index, ensuring it falls within the valid range
         val numTextures = 8  // Assuming there are 8 textures in the textureSet
         val textureIndex =
-            numTextures - ((diff / (2 * com.example.fps_raytrace.engine.PI) * numTextures) + numTextures) % numTextures
+            numTextures - ((diff / (2 * PI) * numTextures) + numTextures) % numTextures
 
         // Fetch the correct texture for rendering
         val texture = guardSprite.getTexture(
@@ -265,7 +263,7 @@ class RaytracerEngine(
 
         // Normalize angle to be between -PI and PI
         angle =
-            (angle + com.example.fps_raytrace.engine.PI) % (2 * com.example.fps_raytrace.engine.PI) - com.example.fps_raytrace.engine.PI
+            (angle + PI) % (2 * PI) - PI
 
         // Check if enemy is within player's FOV
         if (abs(angle) < fovRad / 2) {

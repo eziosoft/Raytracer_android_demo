@@ -1,7 +1,7 @@
 package com.example.fps_raytrace.maps
 
-import com.example.fps_raytrace.models.Player
-import com.example.fps_raytrace.models.PlayerState
+import com.example.fps_raytrace.engine.Player
+import com.example.fps_raytrace.engine.PlayerState
 
 interface Map {
     val MAP_X: Int

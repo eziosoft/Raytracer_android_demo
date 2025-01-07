@@ -1,8 +1,6 @@
-package com.example.fps_raytrace.engine
+package com.example.fps_raytrace.engine.utils
 
 import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
 
 class Screen(val w: Int, val h: Int) {
     val bitmap = ByteArray(w * h * 4)

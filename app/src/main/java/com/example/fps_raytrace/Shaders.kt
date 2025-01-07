@@ -1,4 +1,4 @@
-package com.example.fps_raytrace.engine
+package com.example.fps_raytrace
 
 import org.intellij.lang.annotations.Language
 
@@ -39,5 +39,6 @@ val analogShader = """
        return half4(noisyColor, 1.0);
    }
 """.trimIndent()
+
 
 
