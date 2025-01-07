@@ -84,22 +84,11 @@ class GuardSprite(context: Context) : Sprite {
         walkingFrame: Int,
         dyingFrame: Int
     ): IntArray {
-        when (state) {
-            PlayerState.WALKING -> {
-                return getGuardWalkingTexture(direction, walkingFrame)
-            }
-
-            PlayerState.DYING -> {
-                return getGuardDyingTexture(dyingFrame)
-            }
-
-            PlayerState.DEAD -> {
-                return getGuardDyingTexture(dyingFrame)
-            }
-
-            else -> {
-                return getGuardStillTexture(direction)
-            }
+        return when (state) {
+            PlayerState.WALKING -> getGuardWalkingTexture(direction, walkingFrame)
+            PlayerState.DYING -> getGuardDyingTexture(dyingFrame)
+            PlayerState.DEAD -> getGuardDyingTexture(dyingFrame)
+            else -> getGuardStillTexture(direction)
         }
     }
 
