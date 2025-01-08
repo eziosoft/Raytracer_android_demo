@@ -112,7 +112,9 @@ fun Player.inShotAngle(player: Player): Boolean {
     var diff = this.rotationRad - angle
 
     // Normalize the difference to the range [-π, π]
-    diff = (diff + PI).rem(2 * PI) - PI
+    diff = (diff + PI).rem(2 * PI)
+    if (diff < 0) diff += 2 * PI
+    diff -= PI
 
     return kotlin.math.abs(diff) < 10.toRadian()
 }

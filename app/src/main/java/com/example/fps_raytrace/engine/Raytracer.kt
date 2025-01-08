@@ -7,7 +7,6 @@ import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.normalizeAngle
 import com.example.fps_raytrace.engine.utils.toRadian
 import com.example.fps_raytrace.engine.utils.readPpmImage
-import com.example.fps_raytrace.engine.map.drawMap
 import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sound
 import com.example.fps_raytrace.engine.utils.WallType
@@ -71,36 +70,34 @@ class RaytracerEngine(
 
     private var cpuCount: Int = Runtime.getRuntime().availableProcessors()
 
-    private val playerPosition =
-        findPositionBasedOnMapIndex(
-            mapX = currentMap.MAP_X,
-            mapY = currentMap.MAP_Y,
-            cellSize = cellSize,
-            index = currentMap.MAP.indexOf(MapObject.player.id)
-        )
+    private val playerPosition = findPositionBasedOnMapIndex(
+        mapX = currentMap.MAP_X,
+        mapY = currentMap.MAP_Y,
+        cellSize = cellSize,
+        index = currentMap.MAP.indexOf(MapObject.player.id)
+    )
 
     // create player
-    private val player =
-        Player(
-            x = playerPosition[0],
-            y = playerPosition[1],
-            rotationRad = -90f.toRadian().normalizeAngle(),
-            isMainPlayer = true,
-            sound = sound,
-        )
-
+    private val player = Player(
+        x = playerPosition[0],
+        y = playerPosition[1],
+        rotationRad = -90f.toRadian().normalizeAngle(),
+        isMainPlayer = true,
+        sound = sound,
+    )
 
     //create enemies
     private val enemies = currentMap.getEnemiesFromMap(cellSize = cellSize)
 
-
-    fun start() {
-        sound.loadSound(R.raw.soundtrack)
+    fun init() {
         sound.loadSound(R.raw.gunshot1)
         sound.loadSound(R.raw.mandeathscream)
         sound.loadSound(R.raw.step)
+    }
 
-        sound.playMusic(R.raw.soundtrack, true)
+    fun playNewMusic(resId: Int, isLooping: Boolean) {
+        sound.stopMusic()
+        sound.playMusic(resId, isLooping)
     }
 
     fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
@@ -134,16 +131,16 @@ class RaytracerEngine(
         }
 
         val drawMapTime = measureTime {
-            drawMap(
-                screen = screen,
-                map = currentMap,
-                xOffset = 10,
-                yOffset = height - cellSize * currentMap.MAP_Y - 10,
-                player = player,
-                enemies = enemies,
-                cellSize = cellSize,
-                playerSize = 5f
-            )
+//            drawMap(
+//                screen = screen,
+//                map = currentMap,
+//                xOffset = 10,
+//                yOffset = height - cellSize * currentMap.MAP_Y - 10,
+//                player = player,
+//                enemies = enemies,
+//                cellSize = cellSize,
+//                playerSize = 5f
+//            )
         }
 
 
@@ -746,6 +743,11 @@ class RaytracerEngine(
     fun dispose() {
         sound.stopMusic()
         sound.release()
+    }
+
+
+    fun getAliveEnemiesCount(): Int {
+        return enemies.count { it.state != PlayerState.DEAD }
     }
 }
 

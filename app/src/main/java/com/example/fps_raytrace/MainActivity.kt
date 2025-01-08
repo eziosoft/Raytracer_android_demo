@@ -17,16 +17,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.BottomEnd
+import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -34,12 +40,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.fps_raytrace.composable.Joystick
 import com.example.fps_raytrace.engine.Moves
 import com.example.fps_raytrace.engine.RaytracerEngine
+import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -64,13 +74,49 @@ class MainActivity : ComponentActivity() {
         raytracerEngine =
             RaytracerEngine(context = applicationContext, width = WIDTH, height = HEIGHT)
 
-        setContent {
-            Box(modifier = Modifier.fillMaxSize()) {
-                RayCaster(raytracer = raytracerEngine)
+        raytracerEngine.playNewMusic(R.raw.menu_track, true)
 
-                Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
-                    pressedKeys.clear()
-                    raytracerEngine.movePlayer(x / 30f, -y / 5f)
+        setContent {
+            var started by remember { mutableStateOf(false) }
+
+            FPS_raytraceTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+
+                    RayCaster(raytracer = raytracerEngine)
+
+
+                    if (started) {
+                        Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
+                            pressedKeys.clear()
+                            raytracerEngine.movePlayer(x / 30f, -y / 5f)
+                        }
+
+                        var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
+
+                        LaunchedEffect(Unit, isRunning) {
+                            while (isRunning) {
+                                enemies = raytracerEngine.getAliveEnemiesCount()
+                                delay(1000)
+                            }
+                        }
+
+                        Text(
+                            text = enemies.toString(),
+                            fontSize = 40.sp,
+                            fontFamily = FontFamily.Serif,
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(TopCenter)
+                                .padding(16.dp)
+                                .blendMode(BlendMode.Difference)
+                        )
+                    } else
+                        StartScreen(modifier = Modifier.align(Center),
+                            onStart = {
+                                started = true
+                                raytracerEngine.playNewMusic(R.raw.game_track, true)
+                            }
+                        )
                 }
             }
         }
@@ -169,7 +215,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         isRunning = true
-        raytracerEngine.start()
+        raytracerEngine.init()
     }
 
     override fun onPause() {
