@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,7 +90,7 @@ class MainActivity : ComponentActivity() {
                     if (started) {
                         Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
                             pressedKeys.clear()
-                            raytracerEngine.movePlayer(x / 30f, -y / 5f)
+                            raytracerEngine.movePlayer(x / 20f, -y / 3f)
                         }
 
                         var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
@@ -137,6 +139,12 @@ class MainActivity : ComponentActivity() {
         // Noise intensity (you can make this a parameter if you want to control it dynamically)
         var shaderNoiseIntensity by remember { mutableFloatStateOf(0.4f) }
 
+        val resolution = LocalDensity.current.run {
+            val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
+            val height = LocalConfiguration.current.screenHeightDp.dp.toPx()
+            floatArrayOf(width, height)
+        }
+
 
         // LaunchedEffect for the game loop
         LaunchedEffect(isRunning) {
@@ -178,6 +186,7 @@ class MainActivity : ComponentActivity() {
             runtimeShader.setFloatUniform("noiseIntensity", shaderNoiseIntensity)
             runtimeShader.setFloatUniform("displacement", (shaderNoiseIntensity - 0.2f) * 50f)
             runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity - 0.4f)
+            runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
         }
 
         // Display the ImageBitmap

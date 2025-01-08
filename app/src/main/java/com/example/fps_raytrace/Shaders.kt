@@ -10,6 +10,7 @@ val analogShader = """
    uniform float noiseIntensity; // Intensity of the noise effect
    uniform float displacement; // Chromatic aberration displacement
    uniform float brightness; // Brightness of the final image
+   uniform float2 resolution; // Screen resolution
 
    half rand(float2 coord) {
        // A pseudo-random function based on the coordinate
@@ -17,6 +18,8 @@ val analogShader = """
    }
 
    half4 main(float2 fragCoord) {
+   // Normalize coordinates
+       float2 uv = fragCoord / resolution;
        half3 color = composable.eval(fragCoord).rgb;
        
        // Apply brightness
@@ -34,6 +37,14 @@ val analogShader = """
 
        // Apply noise to the RGB channels
        half3 noisyColor = color + noise;
+       
+       // apply viniette effect
+       float radius = 0.8;
+       float softness = 0.5;
+       float dist = distance(uv, float2(0.5, 0.5));
+       float vignette = smoothstep(radius, radius - softness, dist);
+       noisyColor *= vignette;
+       noisyColor = clamp(noisyColor, 0.0, 1.0);
 
        // Return the final color with alpha preserved
        return half4(noisyColor, 1.0);
@@ -82,6 +93,9 @@ val glitchShader = """
        return half4(glitchColor, 1.0);
    }
 """.trimIndent()
+
+
+
 
 
 
