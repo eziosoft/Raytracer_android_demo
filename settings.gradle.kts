@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "FPS_raytrace"
 include(":app")
- 
+include(":baselineprofile")
