@@ -1,6 +1,7 @@
 package com.example.fps_raytrace.engine
 
 import android.content.Context
+import android.util.Log
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.textures.Walls
 import com.example.fps_raytrace.engine.utils.PI
@@ -53,7 +54,6 @@ class RaytracerEngine(
     private val fovRad: Float = 60.toRadian(),
     private val moveStep: Float = 0.2f,
     private val rotationStepRad: Float = 2f.toRadian(),
-    private val worldTextureSize: Int = 64,
     private val cellSize: Int = 2
 ) {
     private val currentMap: Map = Map1
@@ -81,7 +81,7 @@ class RaytracerEngine(
     private val player = Player(
         x = playerPosition[0],
         y = playerPosition[1],
-        rotationRad = -90f.toRadian().normalizeAngle(),
+        rotationRad = 0f.toRadian().normalizeAngle(),
         isMainPlayer = true,
         sound = sound,
     )
@@ -431,6 +431,13 @@ class RaytracerEngine(
 
 
                             if (castWalls) {                                // Texture mapping for walls
+
+                                val wallTexture = walls.wallTextures[wallTextureIndex]
+                                    ?: error("Wall texture not found $wallTextureIndex")
+
+                                val textureSize: Int =
+                                    sqrt((wallTexture.size / 3).toDouble()).toInt()
+
                                 val wallX: Float = if (side == 0) {
                                     player.y / cellSize + correctedWallDist * rayDirY
                                 } else {
@@ -438,17 +445,15 @@ class RaytracerEngine(
                                 }
                                 val finalWallX = wallX - floor(wallX)
                                 var texX =
-                                    ((finalWallX * worldTextureSize).toInt()) % worldTextureSize
+                                    ((finalWallX * textureSize).toInt()) % textureSize
 
                                 if ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) {
-                                    texX = worldTextureSize - texX - 1
+                                    texX = textureSize - texX - 1
                                 }
 
-                                val step = worldTextureSize.toFloat() / lineHeight
+                                val step = textureSize.toFloat() / lineHeight
                                 var texPos = (drawStart - height / 2 + lineHeight / 2) * step
 
-                                val wallTexture = walls.wallTextures[wallTextureIndex]
-                                    ?: error("Wall texture not found $wallTextureIndex")
 
                                 val intensity =
                                     1.0f - ((correctedWallDist / 20.0f) + 0.4f * side).coerceAtMost(
@@ -457,11 +462,11 @@ class RaytracerEngine(
 
                                 for (y in drawStart until drawEnd) {
                                     val texY =
-                                        (texPos.toInt() and (worldTextureSize - 1))  // No change required here
+                                        (texPos.toInt() and (textureSize - 1))  // No change required here
                                     texPos += step
 
                                     val texIndex =
-                                        (texY * worldTextureSize + texX) * 3  // Move outside if index doesn't change often
+                                        (texY * textureSize + texX) * 3  // Move outside if index doesn't change often
                                     val r = wallTexture[texIndex]
                                     val g = wallTexture[texIndex + 1]
                                     val b = wallTexture[texIndex + 2]
@@ -477,6 +482,8 @@ class RaytracerEngine(
                             }
 
                             if (castCeiling) {
+                                val textureSize: Int =
+                                    sqrt((cellingTexture.size / 3).toDouble()).toInt()
                                 // Ceiling casting
                                 if (drawStart > 0) {
                                     for (y in 0 until drawStart) {
@@ -488,12 +495,12 @@ class RaytracerEngine(
                                             player.y / cellSize + ceilingDistance * rayDirY
 
                                         val ceilingTexX =
-                                            ((ceilingX - floor(ceilingX)) * worldTextureSize).toInt()
+                                            ((ceilingX - floor(ceilingX)) * textureSize).toInt()
                                         val ceilingTexY =
-                                            ((ceilingY - floor(ceilingY)) * worldTextureSize).toInt()
+                                            ((ceilingY - floor(ceilingY)) * textureSize).toInt()
 
                                         val texIndex =
-                                            (ceilingTexY * worldTextureSize + ceilingTexX) * 3
+                                            (ceilingTexY * textureSize + ceilingTexX) * 3
                                         if (texIndex >= 0) {
                                             val r = cellingTexture[texIndex]
                                             val g = cellingTexture[texIndex + 1]
@@ -514,6 +521,9 @@ class RaytracerEngine(
 
                             // Floor casting
                             if (castFloor) {
+                                val textureSize: Int =
+                                    sqrt((floorTexture.size / 3).toDouble()).toInt()
+
                                 if (drawEnd < height) {
                                     for (y in drawEnd until height) {
                                         val floorDistance = height.toFloat() / (2.0f * y - height)
@@ -522,12 +532,12 @@ class RaytracerEngine(
                                         val floorY = player.y / cellSize + floorDistance * rayDirY
 
                                         val floorTexX =
-                                            (floorX * worldTextureSize % worldTextureSize).toInt()
+                                            (floorX * textureSize % textureSize).toInt()
                                         val floorTexY =
-                                            (floorY * worldTextureSize % worldTextureSize).toInt()
+                                            (floorY * textureSize % textureSize).toInt()
 
                                         val texIndex =
-                                            (floorTexY * worldTextureSize + floorTexX) * 3
+                                            (floorTexY * textureSize + floorTexX) * 3
                                         if (texIndex >= 0) {
                                             val r = floorTexture[texIndex]
                                             val g = floorTexture[texIndex + 1]

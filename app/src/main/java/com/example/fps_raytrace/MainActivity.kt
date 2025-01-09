@@ -57,8 +57,10 @@ import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 
 private const val WIDTH = 640
-private const val HEIGHT = WIDTH * 8 / 16
+private const val HEIGHT = WIDTH * 7 / 16
 private const val FPS = 30
+
+private const val noiseIntensity = 0.2f
 
 class MainActivity : ComponentActivity() {
 
@@ -76,10 +78,16 @@ class MainActivity : ComponentActivity() {
         raytracerEngine =
             RaytracerEngine(context = applicationContext, width = WIDTH, height = HEIGHT)
 
-        raytracerEngine.playNewMusic(R.raw.menu_track, true)
-
         setContent {
             var started by remember { mutableStateOf(false) }
+
+            LaunchedEffect(started, isRunning) {
+                if (started) {
+                    raytracerEngine.playNewMusic(R.raw.game_track, true)
+                } else {
+                    raytracerEngine.playNewMusic(R.raw.menu_track, true)
+                }
+            }
 
             FPS_raytraceTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -116,7 +124,6 @@ class MainActivity : ComponentActivity() {
                         StartScreen(modifier = Modifier.align(Center),
                             onStart = {
                                 started = true
-                                raytracerEngine.playNewMusic(R.raw.game_track, true)
                             }
                         )
                 }
@@ -137,7 +144,7 @@ class MainActivity : ComponentActivity() {
         // Create a RuntimeShader instance
         val runtimeShader = remember { RuntimeShader(analogShader) }
         // Noise intensity (you can make this a parameter if you want to control it dynamically)
-        var shaderNoiseIntensity by remember { mutableFloatStateOf(0.4f) }
+        var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
 
         val resolution = LocalDensity.current.run {
             val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
@@ -184,8 +191,8 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(time.value, shaderNoiseIntensity) {
             runtimeShader.setFloatUniform("time", time.value)
             runtimeShader.setFloatUniform("noiseIntensity", shaderNoiseIntensity)
-            runtimeShader.setFloatUniform("displacement", (shaderNoiseIntensity - 0.2f) * 50f)
-            runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity - 0.4f)
+            runtimeShader.setFloatUniform("displacement", 0f)
+            runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity + 1.5f)
             runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
         }
 
@@ -209,7 +216,7 @@ class MainActivity : ComponentActivity() {
                             scope.launch {
                                 shaderNoiseIntensity = 1.0f
                                 delay(200) // Duration of the noise effect
-                                shaderNoiseIntensity = 0.4f
+                                shaderNoiseIntensity = noiseIntensity
                             }
                         }
                     )

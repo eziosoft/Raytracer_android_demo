@@ -2,6 +2,20 @@ package com.example.fps_raytrace
 
 import org.intellij.lang.annotations.Language
 
+@Language("AGSL")
+val emptyShader = """
+   uniform shader composable; // The base image shader
+   uniform float time; // Time uniform for animated noise
+   uniform float noiseIntensity; // Intensity of the noise effect
+   uniform float displacement; // Chromatic aberration displacement
+   uniform float brightness; // Brightness of the final image
+   uniform float2 resolution; // Screen resolution
+   
+   half4 main(float2 fragCoord) {
+       float3 color = composable.eval(fragCoord).rgb;
+       return half4(color, 1.0);
+   }
+""".trimIndent()
 
 @Language("AGSL")
 val analogShader = """
@@ -18,38 +32,43 @@ val analogShader = """
    }
 
    half4 main(float2 fragCoord) {
-   // Normalize coordinates
+       // Normalize coordinates
        float2 uv = fragCoord / resolution;
-       half3 color = composable.eval(fragCoord).rgb;
-       
-       // Apply brightness
-         color = color + color * brightness;
-         
-       // Apply chromatic aberration
-       color.r = composable.eval(float2(fragCoord.x - displacement, fragCoord.y)).r;
-       color.b = composable.eval(float2(fragCoord.x + displacement, fragCoord.y)).b;
+
+       // Sample the base color
+       half3 baseColor = composable.eval(fragCoord).rgb;
+
+       // Apply brightness adjustment
+       baseColor *= brightness;
+
+       // Apply chromatic aberration with proper displacement
+//       half r = composable.eval(fragCoord + float2(0.0, 0.0)).r; // Displace red channel
+//       half g = baseColor.g; // Keep green channel as is
+//       half b = composable.eval(fragCoord - float2(0.0, 0.0)).b; // Displace blue channel
+//       half3 aberratedColor = half3(r, g, b);
 
        // Generate noise based on fragCoord and time
        half noise = rand(fragCoord + time);
 
-       // Scale the noise intensity
+       // Scale the noise intensity and apply it to the RGB channels
        noise = (noise - 0.5) * noiseIntensity;
+       half3 noisyColor = baseColor + noise;
 
-       // Apply noise to the RGB channels
-       half3 noisyColor = color + noise;
-       
-       // apply viniette effect
+       // Apply vignette effect
        float radius = 0.8;
        float softness = 0.5;
-       float dist = distance(uv, float2(0.5, 0.5));
+       float dist = distance(uv, float2(0.5, 0.5)); // Distance from the center
        float vignette = smoothstep(radius, radius - softness, dist);
        noisyColor *= vignette;
+
+       // Clamp the final color to ensure it stays within valid range
        noisyColor = clamp(noisyColor, 0.0, 1.0);
 
        // Return the final color with alpha preserved
        return half4(noisyColor, 1.0);
    }
 """.trimIndent()
+
 
 
 @Language("AGSL")
