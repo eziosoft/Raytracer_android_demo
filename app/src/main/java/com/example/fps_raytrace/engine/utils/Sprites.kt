@@ -11,7 +11,8 @@ interface Sprite {
         direction: Int,
         state: PlayerState,
         walkingFrame: Int,
-        dyingFrame: Int
+        dyingFrame: Int,
+        shootingFrame: Int,
     ): IntArray
 
     fun getFrame(frameIndex: Int): IntArray?

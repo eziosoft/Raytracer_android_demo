@@ -1,6 +1,7 @@
 package com.example.fps_raytrace.sprites
 
 import android.content.Context
+import android.util.Log
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sprite
@@ -78,16 +79,23 @@ class GuardSprite(context: Context) : Sprite {
         4 to loadFrame(guardTextureSheet, 4, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
     )
 
+    private val guardShootingFrames = mapOf(
+        0 to loadFrame(guardTextureSheet, 0, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        1 to loadFrame(guardTextureSheet, 1, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        2 to loadFrame(guardTextureSheet, 2, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+    )
     override fun getTexture(
         direction: Int,
         state: PlayerState,
         walkingFrame: Int,
-        dyingFrame: Int
+        dyingFrame: Int,
+        shootingFrame: Int,
     ): IntArray {
         return when (state) {
             PlayerState.WALKING -> getGuardWalkingTexture(direction, walkingFrame)
             PlayerState.DYING -> getGuardDyingTexture(dyingFrame)
             PlayerState.DEAD -> getGuardDyingTexture(dyingFrame)
+            PlayerState.SHOOTING -> getGuardShootingTexture(shootingFrame)
             else -> getGuardStillTexture(direction)
         }
     }
@@ -101,6 +109,8 @@ class GuardSprite(context: Context) : Sprite {
     }
 
     private fun getGuardWalkingTexture(direction: Int, walkingFrame: Int): IntArray {
+        assert(direction in 0..7, { "Invalid direction: $direction" })
+
         return when (walkingFrame) {
             0 -> guardWalking1[direction]!!
             1 -> guardWalking2[direction]!!
@@ -112,5 +122,9 @@ class GuardSprite(context: Context) : Sprite {
 
     private fun getGuardDyingTexture(dyingFrame: Int): IntArray {
         return guardDyingFrames[dyingFrame]!!
+    }
+
+    private fun getGuardShootingTexture(shootingFrame: Int): IntArray {
+        return guardShootingFrames[shootingFrame]!!
     }
 }

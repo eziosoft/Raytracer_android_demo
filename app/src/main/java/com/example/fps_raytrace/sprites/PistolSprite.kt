@@ -22,8 +22,14 @@ class PistolSprite(context: Context) : Sprite {
     override val TRANSPARENT_COLOR = Screen.Color(0, 255, 255)
     override val SPRITE_SIZE = 128
 
-    override fun getTexture(direction: Int, state: PlayerState, walkingFrame: Int, dyingFrame: Int): IntArray {
-        TODO("Not yet implemented")
+    override fun getTexture(
+        direction: Int,
+        state: PlayerState,
+        walkingFrame: Int,
+        dyingFrame: Int,
+        shootingFrame: Int
+    ): IntArray {
+            TODO("Not yet implemented")
     }
 
     override fun getFrame(frameIndex: Int): IntArray? {

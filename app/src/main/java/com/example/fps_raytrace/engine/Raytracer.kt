@@ -1,7 +1,6 @@
 package com.example.fps_raytrace.engine
 
 import android.content.Context
-import android.util.Log
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.textures.Walls
 import com.example.fps_raytrace.engine.utils.PI
@@ -35,6 +34,10 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
+
+
+private const val SHOOT_ENEMY_DAMAGE = 10
+private const val SHOOT_PLAYER_DAMAGE = 50
 
 
 enum class Moves {
@@ -87,7 +90,11 @@ class RaytracerEngine(
     )
 
     //create enemies
-    private val enemies = currentMap.getEnemiesFromMap(cellSize = cellSize)
+    private val enemies = currentMap.getEnemiesFromMap(
+        cellSize = cellSize,
+        state = PlayerState.WALKING,
+        sound = sound
+    )
 
     fun init() {
         sound.loadSound(R.raw.gunshot1)
@@ -102,10 +109,10 @@ class RaytracerEngine(
 
     fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
-            enemy.animate(map = currentMap, cellSize = cellSize)
+            enemy.animate(map = currentMap, cellSize = cellSize, mainPlayer = player)
         }
 
-        player.animate(state = player.state, map = currentMap, cellSize = cellSize)
+        player.animate(newState = player.state, map = currentMap, cellSize = cellSize)
         movePlayer(pressedKeys)
         onFrame(effects(generateFrame()))
     }
@@ -147,7 +154,7 @@ class RaytracerEngine(
         // draw pistol
         val drawPistolTime = measureTime {
             screen.drawBitmap(
-                bitmap = pistolSprite.getFrame(player.shootingFrame)!!,
+                bitmap = pistolSprite.getFrame(player.mainPlayerShootingFrame)!!,
                 x = 2 * screen.w / 3 + (20 * sin(player.x)).toInt(),
                 y = (screen.h - 175 * 0.8f + 20 - 10 * sin(player.y)).toInt(),
                 bitmapSizeX = 128,
@@ -230,20 +237,21 @@ class RaytracerEngine(
         var diff = angleToPlayer - enemy.rotationRad
 
         // Normalize the angle difference to be between -PI and PI
-        diff =
-            (diff + PI) % (2 * PI) - PI
+        diff = (diff + PI) % (2 * PI) - PI
 
         // Calculate the texture index, ensuring it falls within the valid range
         val numTextures = 8  // Assuming there are 8 textures in the textureSet
         val textureIndex =
-            numTextures - ((diff / (2 * PI) * numTextures) + numTextures) % numTextures
+            ((numTextures - ((diff / (2 * PI) * numTextures).toInt() % numTextures)) + numTextures) % numTextures
+
 
         // Fetch the correct texture for rendering
         val texture = guardSprite.getTexture(
-            direction = textureIndex.toInt(),
+            direction = textureIndex,
             state = enemy.state,
             walkingFrame = enemy.walkingFrame,
-            dyingFrame = enemy.dyingFrame
+            dyingFrame = enemy.dyingFrame,
+            shootingFrame = enemy.shootingFrame
         )
 
         val pointHeight = cellSize // Height of the square in world units
@@ -715,8 +723,7 @@ class RaytracerEngine(
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] =
-                0
+            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] = 0
         }
 
         if (isWall(
@@ -728,23 +735,24 @@ class RaytracerEngine(
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] =
-                0
+            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] = 0
         }
     }
 
     fun shootAndCheckHits() {
-        player.animate(state = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
+        player.animate(newState = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
 
-        if (player.shootingFrame == 0) {
+        if (player.mainPlayerShootingFrame == 0) {
             sound.playSound(R.raw.gunshot1)
         }
 
         enemies.forEach { enemy ->
             if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {
-                if (enemy.state != PlayerState.DEAD) {
+
+                enemy.health -= SHOOT_PLAYER_DAMAGE
+
+                if (enemy.health <= 0 && enemy.state != PlayerState.DEAD) {
                     enemy.state = PlayerState.DYING
-                    sound.playSound(R.raw.mandeathscream)
                 }
             }
         }

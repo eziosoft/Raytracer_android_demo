@@ -2,6 +2,7 @@ package com.example.fps_raytrace.maps
 
 import com.example.fps_raytrace.engine.Player
 import com.example.fps_raytrace.engine.PlayerState
+import com.example.fps_raytrace.engine.utils.Sound
 
 interface Map {
     val MAP_X: Int
@@ -26,7 +27,11 @@ enum class MapObject(val id: Int) {
 }
 
 
-fun Map.getEnemiesFromMap(cellSize: Int): List<Player> {
+fun Map.getEnemiesFromMap(
+    cellSize: Int,
+    state: PlayerState = PlayerState.WALKING,
+    sound: Sound
+): List<Player> {
     val enemies = mutableListOf<Player>()
     this.MAP.forEachIndexed { index, value ->
         if (value == -2) {
@@ -36,8 +41,9 @@ fun Map.getEnemiesFromMap(cellSize: Int): List<Player> {
                     x = position[0],
                     y = position[1],
                     rotationRad = 0f,
-                    state = PlayerState.WALKING,
-                    isMainPlayer = false
+                    state = state,
+                    isMainPlayer = false,
+                    sound = sound
                 )
             )
         }

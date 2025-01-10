@@ -1,6 +1,8 @@
 package com.example.fps_raytrace.engine
 
 import android.util.Log
+import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.PlayerState.*
 import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.Sound
 import com.example.fps_raytrace.engine.utils.WallType
@@ -12,6 +14,8 @@ import kotlin.math.cos
 import kotlin.math.sign
 import kotlin.math.sin
 
+private const val SHOOT_DISTANCE = 5f
+
 enum class PlayerState {
     IDLE,
     WALKING,
@@ -22,43 +26,63 @@ enum class PlayerState {
 
 data class Player(
     val isMainPlayer: Boolean,
-    var state: PlayerState = PlayerState.IDLE,
+    var mainPlayerShootingFrame: Int = 0,
+    var state: PlayerState = IDLE,
+    var health: Int = 100,
     var timer: Int = 0,
     var x: Float,
     var y: Float,
     var rotationRad: Float = 0f,
     var walkingFrame: Int = 0,
-    var shootingFrame: Int = 0,
     var dyingFrame: Int = 0,
+    var shootingFrame: Int = 0,
     val sound: Sound? = null
 )
 
-fun Player.animate(state: PlayerState? = null, map: Map, cellSize: Int) {
+fun Player.animate(
+    newState: PlayerState? = null,
+    map: Map,
+    cellSize: Int,
+    mainPlayer: Player? = null,
+) {
     timer++
 
-    state?.let {
+    newState?.let {
         this.state = it
     }
 
     when (this.state) {
-        PlayerState.WALKING -> {
+        WALKING -> {
             walk()
             if (!isMainPlayer) {
-                walkRandom(map, cellSize)
+                mainPlayer?.let {
+                    walkRandom(map, cellSize, mainPlayer = it)
+                }
             }
         }
 
-        PlayerState.SHOOTING -> {
-            shoot()
+        SHOOTING -> {
+            if (isMainPlayer) {
+                mainPlayerShoot()
+            } else {
+                shoot()
+            }
         }
 
-        PlayerState.DYING -> {
-            dying(5)
+        DYING -> dying(5)
+        DEAD -> this.dead()
+        IDLE -> {}//TODO()
+    }
+
+
+    if (!this.isMainPlayer && this.state != DYING && this.state != DEAD) {
+        distanceTo(mainPlayer!!).let {
+            if (it < SHOOT_DISTANCE) {
+                this.state = SHOOTING
+            } else {
+                this.state = WALKING
+            }
         }
-
-        PlayerState.DEAD -> this.dead()
-
-        PlayerState.IDLE -> {}//TODO()
     }
 
 
@@ -70,21 +94,38 @@ private fun Player.walk() {
     }
 }
 
-private fun Player.shoot(frameCount: Int = 6) {
-    state = PlayerState.SHOOTING
+private fun Player.mainPlayerShoot(frameCount: Int = 6) {
+    state = SHOOTING
 
-    if (shootingFrame >= frameCount - 1) {
-        state = PlayerState.WALKING
-        shootingFrame = 0
+    if (mainPlayerShootingFrame >= frameCount - 1) {
+        state = WALKING
+        mainPlayerShootingFrame = 0
         return
     }
 
     if (this.timer % 10 == 0) {
-        this.shootingFrame++
+        this.mainPlayerShootingFrame++
+    }
+}
+
+private fun Player.shoot() {
+    state = SHOOTING
+
+    if (this.timer % 10 == 0) {
+        shootingFrame = (shootingFrame + 1) % 3
+
+        if (shootingFrame == 2) {
+            sound?.playSound(R.raw.gunshot1)
+        }
     }
 }
 
 private fun Player.dying(frameCount: Int) {
+    state = DYING
+
+    if (this.dyingFrame == 0) {
+        sound?.playSound(R.raw.mandeathscream)
+    }
     if (this.dyingFrame >= frameCount - 1) {
         this.dead()
         return
@@ -95,7 +136,7 @@ private fun Player.dying(frameCount: Int) {
 }
 
 private fun Player.dead() {
-    this.state = PlayerState.DEAD
+    this.state = DEAD
     dyingFrame = 4
 }
 
@@ -120,7 +161,7 @@ fun Player.inShotAngle(player: Player): Boolean {
 }
 
 
-fun Player.walkRandom(map: Map, cellSize: Int, buffer: Float = 0.2f) {
+fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer: Player) {
     // Calculate movement deltas based on current rotation
     val dx = 0.1f * cos(this.rotationRad)
     val dy = 0.1f * sin(this.rotationRad)
@@ -134,7 +175,7 @@ fun Player.walkRandom(map: Map, cellSize: Int, buffer: Float = 0.2f) {
 
     // Check for wall collisions and apply buffer zone
     if (isWall(
-            newX + dx.sign * buffer,
+            newX + dx.sign * padding,
             this.y,
             map.MAP,
             map.MAP_X,
@@ -149,7 +190,7 @@ fun Player.walkRandom(map: Map, cellSize: Int, buffer: Float = 0.2f) {
 
     if (isWall(
             this.x,
-            newY + dy.sign * buffer,
+            newY + dy.sign * padding,
             map.MAP,
             map.MAP_X,
             map.MAP_Y,
@@ -159,6 +200,11 @@ fun Player.walkRandom(map: Map, cellSize: Int, buffer: Float = 0.2f) {
         this.y = newY
     } else {
         rotation = (rotation + 10.toRadian()).normalizeAngle()
+    }
+
+    // walk towards the main player
+    if (this.distanceTo(mainPlayer) < 10f) {
+        rotation = this.angleTo(mainPlayer).normalizeAngle()
     }
 
     // Update rotation
