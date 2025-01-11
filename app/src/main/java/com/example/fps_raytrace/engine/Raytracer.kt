@@ -36,7 +36,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 
 
-private const val SHOOT_ENEMY_DAMAGE = 10
+ const val SHOOT_ENEMY_DAMAGE = 1
 private const val SHOOT_PLAYER_DAMAGE = 50
 
 
@@ -766,6 +766,10 @@ class RaytracerEngine(
 
     fun getAliveEnemiesCount(): Int {
         return enemies.count { it.state != PlayerState.DEAD }
+    }
+
+    fun getPlayerHealth(): Int {
+        return player.health
     }
 }
 

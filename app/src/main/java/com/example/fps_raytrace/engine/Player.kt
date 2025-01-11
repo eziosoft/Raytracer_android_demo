@@ -79,6 +79,9 @@ fun Player.animate(
         distanceTo(mainPlayer!!).let {
             if (it < SHOOT_DISTANCE) {
                 this.state = SHOOTING
+                if(shootingFrame == 2){
+                    mainPlayer.health -= SHOOT_ENEMY_DAMAGE
+                }
             } else {
                 this.state = WALKING
             }
