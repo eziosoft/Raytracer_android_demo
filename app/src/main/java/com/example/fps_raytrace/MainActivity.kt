@@ -13,7 +13,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var started by remember { mutableStateOf(false) }
 
-            var playerHealth by remember { mutableIntStateOf(raytracerEngine.getPlayerHealth()) }
+            val healthProgress = remember { Animatable(0f) }
 
             LaunchedEffect(started, isRunning) {
                 if (started) {
@@ -102,8 +104,11 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 while (isRunning) {
-                    playerHealth = raytracerEngine.getPlayerHealth()
-                    delay(1000)
+                    healthProgress.animateTo(
+                        targetValue = raytracerEngine.getPlayerHealth() / 100f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioHighBouncy)
+                    )
+                    delay(100)
                 }
             }
 
@@ -113,7 +118,7 @@ class MainActivity : ComponentActivity() {
                     RayCaster(raytracer = raytracerEngine)
 
                     LinearProgressIndicator(
-                        progress = { playerHealth / 100f },
+                        progress = { healthProgress.value },
                         color = Color.Red,
                         strokeCap = StrokeCap.Square,
                         gapSize = 1.dp,
@@ -124,158 +129,178 @@ class MainActivity : ComponentActivity() {
                     )
 
 
-                if (started) {
-                    Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
-                        pressedKeys.clear()
-                        raytracerEngine.movePlayer(x / 20f, -y / 3f)
-                    }
-
-                    var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
-
-                    LaunchedEffect(Unit, isRunning) {
-                        while (isRunning) {
-                            enemies = raytracerEngine.getAliveEnemiesCount()
-                            delay(1000)
+                    if (started) {
+                        Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
+                            pressedKeys.clear()
+                            raytracerEngine.movePlayer(x / 20f, -y / 3f)
                         }
-                    }
 
-                    Text(
-                        text = enemies.toString(),
-                        fontSize = 40.sp,
-                        fontFamily = FontFamily.Serif,
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(TopCenter)
-                            .padding(16.dp)
-                            .blendMode(BlendMode.Difference)
-                    )
-                } else
-                    StartScreen(modifier = Modifier.align(Center),
-                        onStart = {
-                            started = true
+                        var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
+
+                        LaunchedEffect(Unit, isRunning) {
+                            while (isRunning) {
+                                enemies = raytracerEngine.getAliveEnemiesCount()
+                                delay(1000)
+                            }
                         }
-                    )
+
+                        Text(
+                            text = enemies.toString(),
+                            fontSize = 40.sp,
+                            fontFamily = FontFamily.Serif,
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(TopCenter)
+                                .padding(16.dp)
+                                .blendMode(BlendMode.Difference)
+                        )
+                    } else
+                        StartScreen(modifier = Modifier.align(Center),
+                            onStart = {
+                                started = true
+                            }
+                        )
+                }
             }
         }
     }
-}
 
-@Composable
-fun RayCaster(raytracer: RaytracerEngine) {
-    val scope = rememberCoroutineScope()
+    @Composable
+    fun RayCaster(raytracer: RaytracerEngine) {
+        val scope = rememberCoroutineScope()
 
-    // Create a single Bitmap instance that will be reused
-    val bitmap = remember { Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888) }
-    val imageBitmap = remember(bitmap) { mutableStateOf(bitmap.asImageBitmap()) }
+        // Create a single Bitmap instance that will be reused
+        val bitmap = remember { Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888) }
+        val imageBitmap = remember(bitmap) { mutableStateOf(bitmap.asImageBitmap()) }
 
-    var fpsTimer = remember { System.currentTimeMillis() }
+        var fpsTimer = remember { System.currentTimeMillis() }
 
-    // Create a RuntimeShader instance
-    val runtimeShader = remember { RuntimeShader(analogShader) }
-    // Noise intensity (you can make this a parameter if you want to control it dynamically)
-    var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
+        // Create a RuntimeShader instance
+        val runtimeShader = remember { RuntimeShader(analogShader) }
+        // Noise intensity (you can make this a parameter if you want to control it dynamically)
+        var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
 
-    val resolution = LocalDensity.current.run {
-        val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
-        val height = LocalConfiguration.current.screenHeightDp.dp.toPx()
-        floatArrayOf(width, height)
-    }
+        val resolution = LocalDensity.current.run {
+            val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
+            val height = LocalConfiguration.current.screenHeightDp.dp.toPx()
+            floatArrayOf(width, height)
+        }
 
 
-    // LaunchedEffect for the game loop
-    LaunchedEffect(isRunning) {
-        while (isRunning) {
-            if (System.currentTimeMillis() > fpsTimer) {
-                fpsTimer = (System.currentTimeMillis() + (1000 / FPS).toLong())
+        // LaunchedEffect for the game loop
+        LaunchedEffect(isRunning) {
+            while (isRunning) {
+                if (System.currentTimeMillis() > fpsTimer) {
+                    fpsTimer = (System.currentTimeMillis() + (1000 / FPS).toLong())
 
-                raytracer.gameLoop(
-                    pressedKeys = pressedKeys,
-                    effects = { screen ->
-                        screen
-                    },
-                    onFrame = { screen ->
-                        bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(screen.getByteArray()))
-                        imageBitmap.value = bitmap.asImageBitmap()
-                    }
+                    raytracer.gameLoop(
+                        pressedKeys = pressedKeys,
+                        effects = { screen ->
+                            screen
+                        },
+                        onFrame = { screen ->
+                            bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(screen.getByteArray()))
+                            imageBitmap.value = bitmap.asImageBitmap()
+                            pressedKeys.clear()
+                        }
+                    )
+
+                    delay(1) // delay to allow compose to draw the frame
+                }
+            }
+        }
+
+
+        // Create an Animatable for the time uniform
+        val time = remember { Animatable(0f) }
+        LaunchedEffect(Unit) {
+            time.animateTo(
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 10000, easing = LinearEasing)
                 )
+            )
+        }
 
-                delay(1) // delay to allow compose to draw the frame
+
+        var displacement by remember { mutableFloatStateOf(0f) }
+        var lastHealth by remember { mutableIntStateOf(raytracer.getPlayerHealth()) }
+
+
+        LaunchedEffect(Unit) {
+            while (isRunning) {
+                if (lastHealth > raytracer.getPlayerHealth()) {
+                    shaderNoiseIntensity = 1.0f
+                    delay(20) // Duration of the noise effect
+                    shaderNoiseIntensity = noiseIntensity
+                }
+                lastHealth = raytracer.getPlayerHealth()
+                displacement = 50 * ((100 - raytracer.getPlayerHealth()) / 100f)
+                delay(1)
             }
         }
-    }
 
+        // Set the uniform values to the shader
+        LaunchedEffect(time.value) {
+            runtimeShader.setFloatUniform("time", time.value)
+            runtimeShader.setFloatUniform("noiseIntensity", shaderNoiseIntensity)
+            runtimeShader.setFloatUniform("displacement", displacement)
+            runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity + 1.5f)
+            runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
+        }
 
-    // Create an Animatable for the time uniform
-    val time = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        time.animateTo(
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 10000, easing = LinearEasing)
-            )
+        // Display the ImageBitmap
+        Image(
+            modifier = Modifier
+                .graphicsLayer {
+                    clip = true
+                    renderEffect = RenderEffect
+                        .createRuntimeShaderEffect(
+                            runtimeShader, "composable"
+                        )
+                        .asComposeRenderEffect()
+                }
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+//                            raytracerEngine.shootAndCheckHits()
+                            pressedKeys.add(Moves.SHOOT)
+                            scope.launch {
+                                shaderNoiseIntensity = 1.0f
+                                delay(200) // Duration of the noise effect
+                                shaderNoiseIntensity = noiseIntensity
+                            }
+                        }
+                    )
+                },
+            bitmap = imageBitmap.value,
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            filterQuality = FilterQuality.High,
         )
     }
 
-    // Set the uniform values to the shader
-    LaunchedEffect(time.value, shaderNoiseIntensity) {
-        runtimeShader.setFloatUniform("time", time.value)
-        runtimeShader.setFloatUniform("noiseIntensity", shaderNoiseIntensity)
-        runtimeShader.setFloatUniform("displacement", 0f)
-        runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity + 1.5f)
-        runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
+    override fun onResume() {
+        super.onResume()
+        isRunning = true
+        raytracerEngine.init()
     }
 
-    // Display the ImageBitmap
-    Image(
-        modifier = Modifier
-            .graphicsLayer {
-                clip = true
-                renderEffect = RenderEffect
-                    .createRuntimeShaderEffect(
-                        runtimeShader, "composable"
-                    )
-                    .asComposeRenderEffect()
-            }
-            .fillMaxSize()
-            .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        raytracerEngine.shootAndCheckHits()
-                        scope.launch {
-                            shaderNoiseIntensity = 1.0f
-                            delay(200) // Duration of the noise effect
-                            shaderNoiseIntensity = noiseIntensity
-                        }
-                    }
-                )
-            },
-        bitmap = imageBitmap.value,
-        contentDescription = null,
-        contentScale = ContentScale.FillBounds,
-        filterQuality = FilterQuality.High,
-    )
-}
-
-override fun onResume() {
-    super.onResume()
-    isRunning = true
-    raytracerEngine.init()
-}
-
-override fun onPause() {
-    super.onPause()
-    isRunning = false
-    raytracerEngine.dispose()
-}
-
-private fun hideSystemNavigationBar() {
-    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-    insetsController.apply {
-        hide(WindowInsetsCompat.Type.statusBars())
-        hide(WindowInsetsCompat.Type.navigationBars())
-        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    override fun onPause() {
+        super.onPause()
+        isRunning = false
+        raytracerEngine.dispose()
     }
-}
+
+    private fun hideSystemNavigationBar() {
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.apply {
+            hide(WindowInsetsCompat.Type.statusBars())
+            hide(WindowInsetsCompat.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
 }
 

@@ -1,6 +1,7 @@
 package com.example.fps_raytrace.engine
 
 import android.content.Context
+import com.example.fps_raytrace.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.textures.Walls
 import com.example.fps_raytrace.engine.utils.PI
@@ -26,6 +27,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
@@ -34,21 +36,6 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
-
-
- const val SHOOT_ENEMY_DAMAGE = 1
-private const val SHOOT_PLAYER_DAMAGE = 50
-
-
-enum class Moves {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    MOVE_LEFT,
-    MOVE_RIGHT,
-    SHOOT
-}
 
 class RaytracerEngine(
     context: Context,
@@ -109,7 +96,12 @@ class RaytracerEngine(
 
     fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
-            enemy.animate(map = currentMap, cellSize = cellSize, mainPlayer = player)
+            enemy.animate(map = currentMap,
+                cellSize = cellSize,
+                mainPlayer = player,
+                isWallBetween = {
+                    isWallBetween(player, enemy)
+                })
         }
 
         player.animate(newState = player.state, map = currentMap, cellSize = cellSize)
@@ -739,7 +731,7 @@ class RaytracerEngine(
         }
     }
 
-    fun shootAndCheckHits() {
+    private fun shootAndCheckHits() {
         player.animate(newState = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
 
         if (player.mainPlayerShootingFrame == 0) {
@@ -748,12 +740,55 @@ class RaytracerEngine(
 
         enemies.forEach { enemy ->
             if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {
+                if (isWallBetween(enemy, player)) return // check if there is a wall between player and enemy
 
                 enemy.health -= SHOOT_PLAYER_DAMAGE
 
                 if (enemy.health <= 0 && enemy.state != PlayerState.DEAD) {
                     enemy.state = PlayerState.DYING
                 }
+            }
+        }
+    }
+
+
+    /**
+     * Check if there is a wall between player and enemy
+     */
+    private fun isWallBetween(player: Player, enemy: Player): Boolean {
+        val dx = enemy.x - player.x
+        val dy = enemy.y - player.y
+
+        val rayDirX = dx / sqrt(dx * dx + dy * dy)
+        val rayDirY = dy / sqrt(dx * dx + dy * dy)
+
+        val stepX = if (rayDirX < 0) -1 else 1
+        val stepY = if (rayDirY < 0) -1 else 1
+
+        val deltaDistX = abs(1 / rayDirX)
+        val deltaDistY = abs(1 / rayDirY)
+
+        var sideDistX = if (rayDirX < 0) (player.x - floor(player.x)) * deltaDistX else (ceil(player.x) - player.x) * deltaDistX
+        var sideDistY = if (rayDirY < 0) (player.y - floor(player.y)) * deltaDistY else (ceil(player.y) - player.y) * deltaDistY
+
+        var mapX = floor(player.x).toInt()
+        var mapY = floor(player.y).toInt()
+
+        while (true) {
+            if (sideDistX < sideDistY) {
+                sideDistX += deltaDistX
+                mapX += stepX
+            } else {
+                sideDistY += deltaDistY
+                mapY += stepY
+            }
+
+            if (mapX == floor(enemy.x).toInt() && mapY == floor(enemy.y).toInt()) {
+                return false
+            }
+
+            if (isWall(mapX.toFloat(), mapY.toFloat(), currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) != WallType.NONE) {
+                return true
             }
         }
     }

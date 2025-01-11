@@ -42,17 +42,17 @@ val analogShader = """
        baseColor *= brightness;
 
        // Apply chromatic aberration with proper displacement
-//       half r = composable.eval(fragCoord + float2(0.0, 0.0)).r; // Displace red channel
-//       half g = baseColor.g; // Keep green channel as is
-//       half b = composable.eval(fragCoord - float2(0.0, 0.0)).b; // Displace blue channel
-//       half3 aberratedColor = half3(r, g, b);
+       half r = composable.eval(fragCoord + float2(displacement, 0.0)).r;
+       half g = composable.eval(fragCoord).g;
+       half b = composable.eval(fragCoord - float2(displacement, 0.0)).b;      
+       half3 aberratedColor = half3(r, g, b);
 
        // Generate noise based on fragCoord and time
        half noise = rand(fragCoord + time);
 
        // Scale the noise intensity and apply it to the RGB channels
        noise = (noise - 0.5) * noiseIntensity;
-       half3 noisyColor = baseColor + noise;
+       half3 noisyColor = aberratedColor + noise;
 
        // Apply vignette effect
        float radius = 0.8;

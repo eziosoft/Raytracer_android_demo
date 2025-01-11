@@ -1,6 +1,7 @@
 package com.example.fps_raytrace.engine
 
 import android.util.Log
+import com.example.fps_raytrace.Const.SHOOT_ENEMY_DAMAGE
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.PlayerState.*
 import com.example.fps_raytrace.engine.utils.PI
@@ -44,8 +45,15 @@ fun Player.animate(
     map: Map,
     cellSize: Int,
     mainPlayer: Player? = null,
+    isWallBetween: (() -> Boolean)? = null,
 ) {
     timer++
+
+    if (isMainPlayer) {
+        health = health.coerceIn(0..100)
+        if (timer % 50 == 0 && health < 100) health++ // health regeneration
+
+    }
 
     newState?.let {
         this.state = it
@@ -76,10 +84,10 @@ fun Player.animate(
 
 
     if (!this.isMainPlayer && this.state != DYING && this.state != DEAD) {
-        distanceTo(mainPlayer!!).let {
-            if (it < SHOOT_DISTANCE) {
+        distanceTo(mainPlayer!!).let { distance ->
+            if (distance < SHOOT_DISTANCE && isWallBetween?.invoke() == false) {
                 this.state = SHOOTING
-                if(shootingFrame == 2){
+                if (shootingFrame == 2) {
                     mainPlayer.health -= SHOOT_ENEMY_DAMAGE
                 }
             } else {
