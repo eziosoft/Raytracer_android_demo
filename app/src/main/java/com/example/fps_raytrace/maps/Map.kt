@@ -51,6 +51,83 @@ fun Map.getEnemiesFromMap(
     return enemies
 }
 
+fun Map.convertMapTo2DArray(): Array<IntArray> {
+    return Array(this.MAP_Y) { y ->
+        IntArray(this.MAP_X) { x ->
+            this.MAP[y * this.MAP_X + x]
+        }
+    }
+}
+
+fun Map.convertMapTo2DArrayForA_Star(): Array<Array<Int>> {
+    return Array(this.MAP_Y) { y ->
+        Array(this.MAP_X) { x ->
+            when (this.MAP[y * this.MAP_X + x]) {
+                0 -> 0
+                1, 2, 3 -> 1
+                else -> 0
+            }
+        }
+    }
+}
+
+fun Pair<Int, Int>.findPositionFromArrayIndexes( cellSize: Int): Pair<Float,Float> {
+    val x = this.second * cellSize + cellSize / 2f
+    val y = this.first * cellSize + cellSize / 2f
+    return Pair(x, y)
+}
+
+fun findArrayIndexesFromPosition(x: Float, y: Float, cellSize: Int): Pair<Int, Int> {
+    val arrayY = (x / cellSize).toInt()
+    val arrayX = (y / cellSize).toInt()
+    return Pair(arrayX, arrayY)
+}
+
+
+fun Array<IntArray>.printMap(): String {
+    var pmap = ""
+    for (i in this.indices) {
+        for (j in this[i].indices) {
+            pmap = pmap.plus(
+                when (this[i][j]) {
+                    0 -> " " // empty
+                    1, 2, 3 -> "\u2588" // wall
+                    8 -> "E" // exit
+                    9 -> "\u25A1" // door
+                    100 -> "S" // start
+                    101 -> "E" // end
+                    99 -> "P" // path
+                    else -> " "
+                }
+            )
+        }
+        pmap = pmap.plus("\n")
+    }
+
+    return pmap
+}
+
+fun Array<Array<Int>>.printMap(): String {
+    var pmap = ""
+    for (i in this.indices) {
+        for (j in this[i].indices) {
+            pmap = pmap.plus(
+                when (this[i][j]) {
+                    0 -> " " // empty
+                    1 -> "\u2588" // wall
+                    100 -> "S" // start
+                    101 -> "E" // end
+                    99 -> "P" // path
+                    else -> " "
+                }
+            )
+        }
+        pmap = pmap.plus("\n")
+    }
+
+    return pmap
+}
+
 fun findPositionBasedOnMapIndex(mapX: Int, mapY: Int, cellSize: Int, index: Int): Array<Float> {
     val x = (index % mapX) * cellSize + cellSize / 2f
     val y = (index / mapY) * cellSize + cellSize / 2f

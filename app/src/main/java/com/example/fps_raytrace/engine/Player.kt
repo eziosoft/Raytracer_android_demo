@@ -1,9 +1,17 @@
 package com.example.fps_raytrace.engine
 
+import aStar
 import android.util.Log
+import com.example.fps_raytrace.Const.ENEMIES_CAN_SHOOT
+import com.example.fps_raytrace.Const.ENEMIES_WALK_TO_PLAYER
+import com.example.fps_raytrace.Const.PLAYER_A_START_WALK
 import com.example.fps_raytrace.Const.SHOOT_ENEMY_DAMAGE
 import com.example.fps_raytrace.R
-import com.example.fps_raytrace.engine.PlayerState.*
+import com.example.fps_raytrace.engine.PlayerState.DEAD
+import com.example.fps_raytrace.engine.PlayerState.DYING
+import com.example.fps_raytrace.engine.PlayerState.IDLE
+import com.example.fps_raytrace.engine.PlayerState.SHOOTING
+import com.example.fps_raytrace.engine.PlayerState.WALKING
 import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.Sound
 import com.example.fps_raytrace.engine.utils.WallType
@@ -11,6 +19,13 @@ import com.example.fps_raytrace.engine.utils.isWall
 import com.example.fps_raytrace.engine.utils.normalizeAngle
 import com.example.fps_raytrace.engine.utils.toRadian
 import com.example.fps_raytrace.maps.Map
+import com.example.fps_raytrace.maps.convertMapTo2DArrayForA_Star
+import com.example.fps_raytrace.maps.findArrayIndexesFromPosition
+import com.example.fps_raytrace.maps.findPositionFromArrayIndexes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sign
 import kotlin.math.sin
@@ -37,7 +52,8 @@ data class Player(
     var walkingFrame: Int = 0,
     var dyingFrame: Int = 0,
     var shootingFrame: Int = 0,
-    val sound: Sound? = null
+    val sound: Sound? = null,
+    var goToPosition: Pair<Float, Float>? = null
 )
 
 fun Player.animate(
@@ -63,8 +79,23 @@ fun Player.animate(
         WALKING -> {
             walk()
             if (!isMainPlayer) {
-                mainPlayer?.let {
-                    walkRandom(map, cellSize, mainPlayer = it)
+                walkRandom(map, cellSize, mainPlayer = mainPlayer)
+            } else {
+
+                if (PLAYER_A_START_WALK) {
+                    if (goToPosition == null) {
+                        aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
+                            player.goToPosition = nextPosition
+                        })
+                    }
+
+                    goToPosition?.let { position ->
+                        if (walkToPosition(map, cellSize, position)) {
+                            aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
+                                player.goToPosition = nextPosition
+                            })
+                        }
+                    }
                 }
             }
         }
@@ -83,20 +114,71 @@ fun Player.animate(
     }
 
 
-    if (!this.isMainPlayer && this.state != DYING && this.state != DEAD) {
-        distanceTo(mainPlayer!!).let { distance ->
-            if (distance < SHOOT_DISTANCE && isWallBetween?.invoke() == false) {
-                this.state = SHOOTING
-                if (shootingFrame == 2) {
-                    mainPlayer.health -= SHOOT_ENEMY_DAMAGE
+    if (ENEMIES_CAN_SHOOT) {
+        if (!this.isMainPlayer && this.state != DYING && this.state != DEAD) {
+            distanceTo(mainPlayer!!).let { distance ->
+                if (distance < SHOOT_DISTANCE && isWallBetween?.invoke() == false) {
+                    this.state = SHOOTING
+                    if (shootingFrame == 2) {
+                        mainPlayer.health -= SHOOT_ENEMY_DAMAGE
+                    }
+                } else {
+                    this.state = WALKING
                 }
-            } else {
-                this.state = WALKING
             }
         }
     }
 
 
+    if (isMainPlayer) {
+        if (timer % 10 == 0) {
+//            aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
+//                Log.d("Player", "currentPosition: $currentPosition, nextPosition: $nextPosition")
+//                val nextRotationRad = angleTo(Player(false, x = nextPosition.first, y = nextPosition.second))
+//
+//                rotationRad = nextRotationRad
+//                val dx = 0.1f * cos(player.rotationRad)
+//                val dy = 0.1f * sin(player.rotationRad)
+//                player.x += dx
+//                player.y += dy
+//                player.walkToPosition(map, cellSize, nextPosition)
+//            })
+        }
+    }
+
+
+}
+
+private var mapForAStar: Array<Array<Int>>? = null
+private var aStarJob: Job? = null
+private val aStarScope = CoroutineScope(Dispatchers.IO)
+
+private fun Player.aStar(
+    map: Map,
+    cellSize: Int,
+    gotoCell: Pair<Int, Int> = Pair(42, 22),
+    callBack: (
+        player: Player,
+        currentPosition: Pair<Float, Float>,
+        nextPosition: Pair<Float, Float>
+    ) -> Unit
+) {
+    val player = this
+    aStarJob = aStarScope.launch {
+        if (mapForAStar == null) {
+            mapForAStar = map.convertMapTo2DArrayForA_Star()
+        }
+
+        val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
+        val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
+
+        val path = aStar(start, gotoCell, mapForAStar!!)
+
+        val nextPosition = path?.get(1)?.findPositionFromArrayIndexes(cellSize)
+        nextPosition?.let {
+            callBack(player, Pair(x, y), it)
+        }
+    }
 }
 
 private fun Player.walk() {
@@ -172,7 +254,7 @@ fun Player.inShotAngle(player: Player): Boolean {
 }
 
 
-fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer: Player) {
+fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer: Player? = null) {
     // Calculate movement deltas based on current rotation
     val dx = 0.1f * cos(this.rotationRad)
     val dy = 0.1f * sin(this.rotationRad)
@@ -214,11 +296,57 @@ fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer
     }
 
     // walk towards the main player
-    if (this.distanceTo(mainPlayer) < 10f) {
-        rotation = this.angleTo(mainPlayer).normalizeAngle()
+    if (ENEMIES_WALK_TO_PLAYER) {
+        mainPlayer?.let {
+            if (this.distanceTo(mainPlayer) < 10f) {
+                rotation = this.angleTo(mainPlayer).normalizeAngle()
+            }
+        }
     }
 
     // Update rotation
     this.rotationRad = rotation
+}
+
+/**
+ * Walk in straight line to a specific position on the map
+ */
+private fun Player.walkToPosition(
+    map: Map,
+    cellSize: Int,
+    goToPosition: Pair<Float, Float>,
+    padding: Float = 0.2f,
+): Boolean {
+    val dx = goToPosition.first - this.x
+    val dy = goToPosition.second - this.y
+    val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+
+    Log.d("aaa", "walkToPosition: $goToPosition, distance: $distance")
+
+    if (distance > 0.1f) {
+        this.rotationRad = kotlin.math.atan2(dy, dx)
+
+        val stepX = (dx / distance) * 0.1f
+        val stepY = (dy / distance) * 0.1f
+
+        val newX = this.x + stepX
+        val newY = this.y + stepY
+
+        if (!isMainPlayer) {
+            if (isWall(newX + stepX.sign * padding, this.y, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+                this.x = newX
+            }
+
+            if (isWall(this.x, newY + stepY.sign * padding, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+                this.y = newY
+            }
+        } else {
+            this.x = newX
+            this.y = newY
+        }
+        return false
+    } else {
+        return true
+    }
 }
 

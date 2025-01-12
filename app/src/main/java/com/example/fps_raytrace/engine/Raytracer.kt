@@ -1,8 +1,10 @@
 package com.example.fps_raytrace.engine
 
 import android.content.Context
+import com.example.fps_raytrace.Const.DRAW_MAP
 import com.example.fps_raytrace.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.map.drawMap
 import com.example.fps_raytrace.textures.Walls
 import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.normalizeAngle
@@ -74,6 +76,7 @@ class RaytracerEngine(
         rotationRad = 0f.toRadian().normalizeAngle(),
         isMainPlayer = true,
         sound = sound,
+        state = PlayerState.WALKING
     )
 
     //create enemies
@@ -130,16 +133,18 @@ class RaytracerEngine(
         }
 
         val drawMapTime = measureTime {
-//            drawMap(
-//                screen = screen,
-//                map = currentMap,
-//                xOffset = 10,
-//                yOffset = height - cellSize * currentMap.MAP_Y - 10,
-//                player = player,
-//                enemies = enemies,
-//                cellSize = cellSize,
-//                playerSize = 5f
-//            )
+            if (DRAW_MAP) {
+                drawMap(
+                    screen = screen,
+                    map = currentMap,
+                    xOffset = 10,
+                    yOffset = height - cellSize * currentMap.MAP_Y - 10,
+                    player = player,
+                    enemies = enemies,
+                    cellSize = cellSize,
+                    playerSize = 5f
+                )
+            }
         }
 
 
