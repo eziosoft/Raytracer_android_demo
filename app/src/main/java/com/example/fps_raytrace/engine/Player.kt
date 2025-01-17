@@ -321,8 +321,6 @@ private fun Player.walkToPosition(
     val dy = goToPosition.second - this.y
     val distance = kotlin.math.sqrt(dx * dx + dy * dy)
 
-    Log.d("aaa", "walkToPosition: $goToPosition, distance: $distance")
-
     if (distance > 0.1f) {
         this.rotationRad = kotlin.math.atan2(dy, dx)
 
