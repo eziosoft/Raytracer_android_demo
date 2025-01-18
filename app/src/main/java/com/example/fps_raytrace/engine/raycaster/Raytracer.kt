@@ -1,9 +1,15 @@
-package com.example.fps_raytrace.engine
+package com.example.fps_raytrace.engine.raycaster
 
 import android.content.Context
 import com.example.fps_raytrace.Const.DRAW_MAP
 import com.example.fps_raytrace.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.Moves
+import com.example.fps_raytrace.engine.Player
+import com.example.fps_raytrace.engine.PlayerState
+import com.example.fps_raytrace.engine.animate
+import com.example.fps_raytrace.engine.distanceTo
+import com.example.fps_raytrace.engine.inShotAngle
 import com.example.fps_raytrace.engine.map.drawMap
 import com.example.fps_raytrace.textures.Walls
 import com.example.fps_raytrace.engine.utils.PI
@@ -41,23 +47,23 @@ import kotlin.time.measureTime
 
 class RaytracerEngine(
     context: Context,
-    private val width: Int,
-    private val height: Int,
+    private val screenWidth: Int,
+    private val screenHeight: Int,
     private val fovRad: Float = 60.toRadian(),
     private val moveStep: Float = 0.2f,
     private val rotationStepRad: Float = 2f.toRadian(),
     private val cellSize: Int = 2
 ) {
     private val currentMap: Map = Map1
-    private val walls = Walls(context)
+    private val wallTextures = Walls(context)
     private val pistolSprite = PistolSprite(context)
     private val guardSprite = GuardSprite(context)
     private val floorTexture: IntArray = readPpmImage(context, R.raw.floor)
-    private val cellingTexture: IntArray = readPpmImage(context, R.raw.celling)
+    private val ceilingTexture: IntArray = readPpmImage(context, R.raw.celling)
 
-    private val wallDepths = FloatArray(width) // depth buffer
+    private val wallDepths = FloatArray(screenWidth) // depth buffer
 
-    private val screen = Screen(width, height)
+    private val screen = Screen(screenWidth, screenHeight)
     private val sound = Sound(context)
 
     private var cpuCount: Int = Runtime.getRuntime().availableProcessors()
@@ -128,7 +134,17 @@ class RaytracerEngine(
         // draw enemies based on distance
         val drawSpriteTime = measureTime {
             enemies.sortedByDescending { it.distanceTo(player) }.forEach { enemy ->
-                drawSprite(screen, player, enemy, wallDepths)
+                drawEnemy(
+                    screen,
+                    player,
+                    enemy,
+                    wallDepths,
+                    guardSprite,
+                    cellSize,
+                    screenWidth,
+                    screenHeight,
+                    fovRad
+                )
             }
         }
 
@@ -138,7 +154,7 @@ class RaytracerEngine(
                     screen = screen,
                     map = currentMap,
                     xOffset = 10,
-                    yOffset = height - cellSize * currentMap.MAP_Y - 10,
+                    yOffset = screenHeight - cellSize * currentMap.MAP_Y - 10,
                     player = player,
                     enemies = enemies,
                     cellSize = cellSize,
@@ -164,7 +180,7 @@ class RaytracerEngine(
         val drawCrossTime = measureTime {
             enemies.forEach { enemy ->
                 if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {
-                    drawCross(screen)
+                    drawCross(screen, screenWidth, screenHeight)
                 }
             }
         }
@@ -199,126 +215,6 @@ class RaytracerEngine(
         return screen
     }
 
-    private fun drawCross(screen: Screen) {
-        val crossSize = 10
-        val x = width / 2 - crossSize / 2
-        val y = height / 2 - crossSize / 2
-
-        screen.drawLine(
-            x,
-            y,
-            x + crossSize,
-            y + crossSize,
-            255,
-            255,
-            255
-        )
-        screen.drawLine(
-            x + crossSize,
-            y,
-            x,
-            y + crossSize,
-            255,
-            255,
-            255
-        )
-    }
-
-
-    // draws square in 3d world using 3d projection mapping
-    private fun drawSprite(screen: Screen, player: Player, enemy: Player, wallDepths: FloatArray) {
-        // Calculate the angle from the enemy to the player
-        val angleToPlayer = atan2(player.y - enemy.y, player.x - enemy.x)
-
-        // Calculate the difference between the enemy's rotation and the angle to the player
-        var diff = angleToPlayer - enemy.rotationRad
-
-        // Normalize the angle difference to be between -PI and PI
-        diff = (diff + PI) % (2 * PI) - PI
-
-        // Calculate the texture index, ensuring it falls within the valid range
-        val numTextures = 8  // Assuming there are 8 textures in the textureSet
-        val textureIndex =
-            ((numTextures - ((diff / (2 * PI) * numTextures).toInt() % numTextures)) + numTextures) % numTextures
-
-
-        // Fetch the correct texture for rendering
-        val texture = guardSprite.getTexture(
-            direction = textureIndex,
-            state = enemy.state,
-            walkingFrame = enemy.walkingFrame,
-            dyingFrame = enemy.dyingFrame,
-            shootingFrame = enemy.shootingFrame
-        )
-
-        val pointHeight = cellSize // Height of the square in world units
-
-        // Calculate vector from player to enemy
-        val dx = enemy.x - player.x
-        val dy = enemy.y - player.y
-
-        // Calculate distance to enemy
-        val distance = sqrt(dx * dx + dy * dy)
-
-        // Calculate angle to enemy relative to player's rotation
-        var angle = atan2(dy, dx) - player.rotationRad
-
-        // Normalize angle to be between -PI and PI
-        angle =
-            (angle + PI) % (2 * PI) - PI
-
-        // Check if enemy is within player's FOV
-        if (abs(angle) < fovRad / 2) {
-            // Calculate screen x-coordinate
-            val screenX = ((width / 2) * (1 + angle / (fovRad / 2))).toInt()
-
-            // Calculate perceived height of the square
-            val perceivedHeight = (height / distance * pointHeight).toInt()
-
-            // Calculate top and bottom y-coordinates
-            val topY = (height / 2 - perceivedHeight / 2).coerceIn(0, height - 1)
-            val bottomY = (height / 2 + perceivedHeight / 2).coerceIn(0, height - 1)
-
-            // Calculate perceived width of the square
-            val perceivedWidth = perceivedHeight
-
-            // Draw sprite
-            for (y in topY..bottomY) {
-                for (x in (screenX - perceivedWidth / 2)..(screenX + perceivedWidth / 2)) {
-                    if (x >= 0 && x < width) {
-                        // Only draw the sprite pixel if it's closer than the wall
-                        if (wallDepths[x] - (distance / cellSize) > -0.1) { // -0.1 - padding to avoid wall clipping
-                            // Calculate texture coordinates
-                            val texX =
-                                ((x - (screenX - perceivedWidth / 2)).toFloat() / perceivedWidth * guardSprite.SPRITE_SIZE).toInt() % guardSprite.SPRITE_SIZE
-                            val texY =
-                                ((y - topY).toFloat() / perceivedHeight * guardSprite.SPRITE_SIZE).toInt() % guardSprite.SPRITE_SIZE
-
-                            val texIndex = (texY * guardSprite.SPRITE_SIZE + texX) * 3
-
-                            val r = texture[texIndex]
-                            val g = texture[texIndex + 1]
-                            val b = texture[texIndex + 2]
-
-                            if (r != guardSprite.TRANSPARENT_COLOR.red || g != guardSprite.TRANSPARENT_COLOR.green || b != guardSprite.TRANSPARENT_COLOR.blue) {
-                                // Apply distance-based shading
-                                val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
-
-                                screen.setRGB(
-                                    x,
-                                    y,
-                                    r.darkenColor(intensity),
-                                    g.darkenColor(intensity),
-                                    b.darkenColor(intensity)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 
     // Ray casting using DDA algorithm. Cover walls with wall texture. Add fish-eye correction.
     private fun castRays(
@@ -329,7 +225,7 @@ class RaytracerEngine(
         castCeiling: Boolean
     ) =
         runBlocking {
-            val rayCount = width
+            val rayCount = screenWidth
             val rayStep = fovRad / rayCount
 
             // Precompute values to avoid recalculating in the loop
@@ -428,136 +324,55 @@ class RaytracerEngine(
                             val correctedWallDist = perpWallDist// * cos(x * rayStep - fovRad / 2)
 
                             // Calculate height of the line to draw on screen
-                            val lineHeight = (height / correctedWallDist).toInt()
+                            val lineHeight = (screenHeight / correctedWallDist).toInt()
 
                             // Calculate lowest and highest pixel to fill in current stripe
-                            val drawStart = max(0, -lineHeight / 2 + height / 2)
-                            val drawEnd = min(height - 1, lineHeight / 2 + height / 2)
+                            val drawStart = max(0, -lineHeight / 2 + screenHeight / 2)
+                            val drawEnd = min(screenHeight - 1, lineHeight / 2 + screenHeight / 2)
 
 
-                            if (castWalls) {                                // Texture mapping for walls
-
-                                val wallTexture = walls.wallTextures[wallTextureIndex]
-                                    ?: error("Wall texture not found $wallTextureIndex")
-
-                                val textureSize: Int =
-                                    sqrt((wallTexture.size / 3).toDouble()).toInt()
-
-                                val wallX: Float = if (side == 0) {
-                                    player.y / cellSize + correctedWallDist * rayDirY
-                                } else {
-                                    player.x / cellSize + correctedWallDist * rayDirX
-                                }
-                                val finalWallX = wallX - floor(wallX)
-                                var texX =
-                                    ((finalWallX * textureSize).toInt()) % textureSize
-
-                                if ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) {
-                                    texX = textureSize - texX - 1
-                                }
-
-                                val step = textureSize.toFloat() / lineHeight
-                                var texPos = (drawStart - height / 2 + lineHeight / 2) * step
-
-
-                                val intensity =
-                                    1.0f - ((correctedWallDist / 20.0f) + 0.4f * side).coerceAtMost(
-                                        1f
-                                    )
-
-                                for (y in drawStart until drawEnd) {
-                                    val texY =
-                                        (texPos.toInt() and (textureSize - 1))  // No change required here
-                                    texPos += step
-
-                                    val texIndex =
-                                        (texY * textureSize + texX) * 3  // Move outside if index doesn't change often
-                                    val r = wallTexture[texIndex]
-                                    val g = wallTexture[texIndex + 1]
-                                    val b = wallTexture[texIndex + 2]
-
-                                    bitmap.setRGB(
-                                        x, y,
-                                        r.darkenColor(intensity),
-                                        g.darkenColor(intensity),
-                                        b.darkenColor(intensity)
-                                    )
-                                }
-
+                            // Wall casting
+                            if (castWalls) {
+                                castWallColumn(
+                                    textureIndex = wallTextureIndex,
+                                    wallSide = side,
+                                    player = player,
+                                    wallDistance = correctedWallDist,
+                                    rayDirectionY = rayDirY,
+                                    rayDirectionX = rayDirX,
+                                    columnHeight = lineHeight,
+                                    drawStartY = drawStart,
+                                    drawEndY = drawEnd,
+                                    screen = bitmap,
+                                    screenColumn = x,
+                                    walls = wallTextures,
+                                    cellSize = cellSize,
+                                    height = screenHeight
+                                )
                             }
 
+                            // Ceiling casting
                             if (castCeiling) {
-                                val textureSize: Int =
-                                    sqrt((cellingTexture.size / 3).toDouble()).toInt()
-                                // Ceiling casting
-                                if (drawStart > 0) {
-                                    for (y in 0 until drawStart) {
-                                        val ceilingDistance = height.toFloat() / (height - 2.0f * y)
-
-                                        val ceilingX =
-                                            player.x / cellSize + ceilingDistance * rayDirX
-                                        val ceilingY =
-                                            player.y / cellSize + ceilingDistance * rayDirY
-
-                                        val ceilingTexX =
-                                            ((ceilingX - floor(ceilingX)) * textureSize).toInt()
-                                        val ceilingTexY =
-                                            ((ceilingY - floor(ceilingY)) * textureSize).toInt()
-
-                                        val texIndex =
-                                            (ceilingTexY * textureSize + ceilingTexX) * 3
-                                        if (texIndex >= 0) {
-                                            val r = cellingTexture[texIndex]
-                                            val g = cellingTexture[texIndex + 1]
-                                            val b = cellingTexture[texIndex + 2]
-
-
-                                            bitmap.setRGB(
-                                                x,
-                                                y,
-                                                r.darkenColor(0.5f),
-                                                g.darkenColor(0.5f),
-                                                b.darkenColor(0.5f)
-                                            )
-                                        }
-                                    }
-                                }
+                                renderCeiling(
+                                    drawStartY = drawStart,
+                                    player = player,
+                                    rayDirectionX = rayDirX,
+                                    rayDirectionY = rayDirY,
+                                    screen = bitmap,
+                                    screenColumn = x
+                                )
                             }
 
                             // Floor casting
                             if (castFloor) {
-                                val textureSize: Int =
-                                    sqrt((floorTexture.size / 3).toDouble()).toInt()
-
-                                if (drawEnd < height) {
-                                    for (y in drawEnd until height) {
-                                        val floorDistance = height.toFloat() / (2.0f * y - height)
-
-                                        val floorX = player.x / cellSize + floorDistance * rayDirX
-                                        val floorY = player.y / cellSize + floorDistance * rayDirY
-
-                                        val floorTexX =
-                                            (floorX * textureSize % textureSize).toInt()
-                                        val floorTexY =
-                                            (floorY * textureSize % textureSize).toInt()
-
-                                        val texIndex =
-                                            (floorTexY * textureSize + floorTexX) * 3
-                                        if (texIndex >= 0) {
-                                            val r = floorTexture[texIndex]
-                                            val g = floorTexture[texIndex + 1]
-                                            val b = floorTexture[texIndex + 2]
-
-                                            bitmap.setRGB(
-                                                x,
-                                                y,
-                                                r.darkenColor(0.5f),
-                                                g.darkenColor(0.5f),
-                                                b.darkenColor(0.5f)
-                                            )
-                                        }
-                                    }
-                                }
+                                renderFloor(
+                                    drawEndY = drawEnd,
+                                    player = player,
+                                    rayDirectionX = rayDirX,
+                                    rayDirectionY = rayDirY,
+                                    screen = bitmap,
+                                    screenColumn = x
+                                )
                             }
                         }
                     }
@@ -566,6 +381,51 @@ class RaytracerEngine(
                 deferredResults.awaitAll()
             }
         }
+
+
+    private fun renderFloor(
+        drawEndY: Int,
+        player: Player,
+        rayDirectionX: Float,
+        rayDirectionY: Float,
+        screen: Screen,
+        screenColumn: Int
+    ) {
+        renderSurface(
+            drawEndY until screenHeight,
+            player,
+            rayDirectionX,
+            rayDirectionY,
+            floorTexture,
+            screen,
+            screenColumn,
+            isCeiling = false,
+            height = screenHeight,
+            cellSize = cellSize
+        )
+    }
+
+    private fun renderCeiling(
+        drawStartY: Int,
+        player: Player,
+        rayDirectionX: Float,
+        rayDirectionY: Float,
+        screen: Screen,
+        screenColumn: Int
+    ) {
+        renderSurface(
+            0 until drawStartY,
+            player,
+            rayDirectionX,
+            rayDirectionY,
+            ceilingTexture,
+            screen,
+            screenColumn,
+            isCeiling = true,
+            height = screenHeight,
+            cellSize = cellSize
+        )
+    }
 
 
     fun movePlayer(x: Float, y: Float) {
@@ -720,7 +580,8 @@ class RaytracerEngine(
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] = 0
+            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] =
+                0
         }
 
         if (isWall(
@@ -732,7 +593,8 @@ class RaytracerEngine(
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] = 0
+            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] =
+                0
         }
     }
 
@@ -745,7 +607,11 @@ class RaytracerEngine(
 
         enemies.forEach { enemy ->
             if (player.distanceTo(enemy) < 10 && player.inShotAngle(enemy)) {
-                if (isWallBetween(enemy, player)) return // check if there is a wall between player and enemy
+                if (isWallBetween(
+                        enemy,
+                        player
+                    )
+                ) return // check if there is a wall between player and enemy
 
                 enemy.health -= SHOOT_PLAYER_DAMAGE
 
@@ -773,8 +639,10 @@ class RaytracerEngine(
         val deltaDistX = abs(1 / rayDirX)
         val deltaDistY = abs(1 / rayDirY)
 
-        var sideDistX = if (rayDirX < 0) (player.x - floor(player.x)) * deltaDistX else (ceil(player.x) - player.x) * deltaDistX
-        var sideDistY = if (rayDirY < 0) (player.y - floor(player.y)) * deltaDistY else (ceil(player.y) - player.y) * deltaDistY
+        var sideDistX =
+            if (rayDirX < 0) (player.x - floor(player.x)) * deltaDistX else (ceil(player.x) - player.x) * deltaDistX
+        var sideDistY =
+            if (rayDirY < 0) (player.y - floor(player.y)) * deltaDistY else (ceil(player.y) - player.y) * deltaDistY
 
         var mapX = floor(player.x).toInt()
         var mapY = floor(player.y).toInt()
@@ -792,7 +660,15 @@ class RaytracerEngine(
                 return false
             }
 
-            if (isWall(mapX.toFloat(), mapY.toFloat(), currentMap.MAP, currentMap.MAP_X, currentMap.MAP_Y, cellSize) != WallType.NONE) {
+            if (isWall(
+                    mapX.toFloat(),
+                    mapY.toFloat(),
+                    currentMap.MAP,
+                    currentMap.MAP_X,
+                    currentMap.MAP_Y,
+                    cellSize
+                ) != WallType.NONE
+            ) {
                 return true
             }
         }

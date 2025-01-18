@@ -4,10 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
-import android.widget.ProgressBar
-import android.widget.Spinner
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Bottom
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.TopCenter
@@ -61,7 +56,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.fps_raytrace.composable.Joystick
 import com.example.fps_raytrace.engine.Moves
-import com.example.fps_raytrace.engine.RaytracerEngine
+import com.example.fps_raytrace.engine.raycaster.RaytracerEngine
 import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -87,7 +82,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         raytracerEngine =
-            RaytracerEngine(context = applicationContext, width = WIDTH, height = HEIGHT)
+            RaytracerEngine(context = applicationContext, screenWidth = WIDTH, screenHeight = HEIGHT)
 
         setContent {
             var started by remember { mutableStateOf(false) }

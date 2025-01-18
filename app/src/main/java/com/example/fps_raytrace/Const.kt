@@ -8,5 +8,5 @@ object Const {
 
     const val ENEMIES_CAN_SHOOT = true
     const val ENEMIES_WALK_TO_PLAYER = true
-    const val PLAYER_A_START_WALK = true
+    const val PLAYER_A_START_WALK = false
 }
