@@ -1,3 +1,5 @@
+package com.example.fps_raytrace.engine.raycaster
+
 import com.example.fps_raytrace.engine.Player
 import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.Screen
