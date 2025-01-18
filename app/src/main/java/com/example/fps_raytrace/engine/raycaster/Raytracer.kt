@@ -28,6 +28,7 @@ import com.example.fps_raytrace.maps.findPositionBasedOnMapIndex
 import com.example.fps_raytrace.maps.getEnemiesFromMap
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.PistolSprite
+import drawEnemy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
