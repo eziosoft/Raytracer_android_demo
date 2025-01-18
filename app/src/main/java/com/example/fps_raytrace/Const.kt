@@ -6,7 +6,7 @@ object Const {
     const val SHOOT_ENEMY_DAMAGE = 1
     const val SHOOT_PLAYER_DAMAGE = 100
 
-    const val ENEMIES_CAN_SHOOT = true
-    const val ENEMIES_WALK_TO_PLAYER = true
+    const val ENEMIES_CAN_SHOOT = false
+    const val ENEMIES_WALK_TO_PLAYER = false
     const val PLAYER_A_START_WALK = false
 }
