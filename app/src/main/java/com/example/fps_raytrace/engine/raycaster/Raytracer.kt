@@ -4,6 +4,8 @@ import android.content.Context
 import com.example.fps_raytrace.engine.Const.DRAW_MAP
 import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.Const.LOG_STATS
+import com.example.fps_raytrace.engine.Const.MAP_CELL_SIZE
 import com.example.fps_raytrace.engine.Const.PLAYER_FOV
 import com.example.fps_raytrace.engine.Const.PLAYER_ROTATION_SPEED_RAD
 import com.example.fps_raytrace.engine.Const.PLAYER_SPEED
@@ -49,21 +51,24 @@ class RaytracerEngine(
     context: Context,
     private val screenWidth: Int,
     private val screenHeight: Int,
-    private val cellSize: Int = 10
+    private val cellSize: Int = MAP_CELL_SIZE
 ) {
-    private val currentMap: Map = Map1
-    private val wallTextures = Walls(context)
-    private val pistolSprite = PistolSprite(context)
-    private val guardSprite = GuardSprite(context)
-    private val floorTexture: IntArray = readPpmImage(context, R.raw.floor)
-    private val ceilingTexture: IntArray = readPpmImage(context, R.raw.celling)
-
-    private val wallDepths = FloatArray(screenWidth) // depth buffer
-
     private val screen = Screen(screenWidth, screenHeight)
     private val sound = Sound(context)
 
     private var cpuCount: Int = Runtime.getRuntime().availableProcessors()
+    private val wallDepths = FloatArray(screenWidth) // depth buffer
+
+    private val currentMap: Map = Map1
+
+    // Textures
+    private val wallTextures = Walls(context)
+    private val ceilingTexture: IntArray = readPpmImage(context, R.raw.celling)
+    private val floorTexture: IntArray = readPpmImage(context, R.raw.floor)
+
+    // Sprites
+    private val pistolSprite = PistolSprite(context)
+    private val guardSprite = GuardSprite(context)
 
     private val playerPosition = findPositionBasedOnMapIndex(
         mapX = currentMap.MAP_X,
@@ -72,7 +77,7 @@ class RaytracerEngine(
         index = currentMap.MAP.indexOf(MapObject.player.id)
     )
 
-    // create player
+    // create main player
     private val player = Player(
         x = playerPosition[0],
         y = playerPosition[1],
@@ -190,7 +195,7 @@ class RaytracerEngine(
 
         val totalTime =
             castRayTime + drawSpriteTime + drawMapTime + drawPistolTime + drawCrossTime + animateTime
-        if (true) {
+        if (LOG_STATS) {
             if (System.currentTimeMillis() % 3 == 0L) {
                 println(
                     "total: ${totalTime.toInt(DurationUnit.MILLISECONDS)}ms, castRayTime=${
@@ -428,11 +433,10 @@ class RaytracerEngine(
         var dy = 0f
         var dr = 0f
 
-        dx += y * cos(player.rotationRad)
-        dy += y * sin(player.rotationRad)
+        dx += y * cos(player.rotationRad) // delta x
+        dy += y * sin(player.rotationRad) // delta y
 
-        dr = x
-
+        dr = x // delta rotation
         player.rotationRad += dr.normalizeAngle()
 
         val newX = player.x + dx
