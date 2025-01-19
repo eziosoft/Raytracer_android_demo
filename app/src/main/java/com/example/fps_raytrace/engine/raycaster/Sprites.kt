@@ -5,11 +5,20 @@ import com.example.fps_raytrace.engine.utils.PI
 import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sprite
 import com.example.fps_raytrace.engine.utils.darkenColor
+import com.example.fps_raytrace.engine.utils.isTransparent
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
-fun drawEnemy(screen: Screen, player: Player, enemy: Player, wallDepths: FloatArray, textureSet: Sprite, cellSize: Int, screenWidth: Int, screenHeight: Int, fovRad: Float) {
+fun drawEnemy(
+    screen: Screen,
+    cellSize: Int,
+    fovRad: Float,
+    player: Player,
+    enemy: Player,
+    textureSet: Sprite,
+    wallDepths: FloatArray
+) {
     // Calculate the angle from the enemy to the player
     val angleToPlayer = atan2(player.y - enemy.y, player.x - enemy.x)
 
@@ -52,14 +61,14 @@ fun drawEnemy(screen: Screen, player: Player, enemy: Player, wallDepths: FloatAr
     // Check if enemy is within player's FOV
     if (abs(angle) < fovRad / 2) {
         // Calculate screen x-coordinate
-        val screenX = ((screenWidth / 2) * (1 + angle / (fovRad / 2))).toInt()
+        val screenX = ((screen.width / 2) * (1 + angle / (fovRad / 2))).toInt()
 
         // Calculate perceived height of the square
-        val perceivedHeight = (screenHeight / distance * pointHeight).toInt()
+        val perceivedHeight = (screen.height / distance * pointHeight).toInt()
 
         // Calculate top and bottom y-coordinates
-        val topY = (screenHeight / 2 - perceivedHeight / 2).coerceIn(0, screenHeight - 1)
-        val bottomY = (screenHeight / 2 + perceivedHeight / 2).coerceIn(0, screenHeight - 1)
+        val topY = (screen.height / 2 - perceivedHeight / 2).coerceIn(0, screen.height - 1)
+        val bottomY = (screen.height / 2 + perceivedHeight / 2).coerceIn(0, screen.height - 1)
 
         // Calculate perceived width of the square
         val perceivedWidth = perceivedHeight
@@ -67,9 +76,9 @@ fun drawEnemy(screen: Screen, player: Player, enemy: Player, wallDepths: FloatAr
         // Draw sprite
         for (y in topY..bottomY) {
             for (x in (screenX - perceivedWidth / 2)..(screenX + perceivedWidth / 2)) {
-                if (x >= 0 && x < screenWidth) {
+                if (x >= 0 && x < screen.width) {
                     // Only draw the sprite pixel if it's closer than the wall
-                    if (wallDepths[x] - (distance / cellSize) > -0.1) { // -0.1 - padding to avoid wall clipping
+                    if (wallDepths[x] - (distance / cellSize) > -0.2) { // -0.1 - padding to avoid wall clipping
                         // Calculate texture coordinates
                         val texX =
                             ((x - (screenX - perceivedWidth / 2)).toFloat() / perceivedWidth * textureSet.SPRITE_SIZE).toInt() % textureSet.SPRITE_SIZE
@@ -78,20 +87,17 @@ fun drawEnemy(screen: Screen, player: Player, enemy: Player, wallDepths: FloatAr
 
                         val texIndex = (texY * textureSet.SPRITE_SIZE + texX) * 3
 
-                        val r = texture[texIndex]
-                        val g = texture[texIndex + 1]
-                        val b = texture[texIndex + 2]
+                        val color = getTexturePixelColor(texture, texIndex)
 
-                        if (r != textureSet.TRANSPARENT_COLOR.red || g != textureSet.TRANSPARENT_COLOR.green || b != textureSet.TRANSPARENT_COLOR.blue) {
+
+                        if (!isTransparent(color = color, transparentColor = textureSet.TRANSPARENT_COLOR)) {
                             // Apply distance-based shading
                             val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
 
                             screen.setRGB(
-                                x,
-                                y,
-                                r.darkenColor(intensity),
-                                g.darkenColor(intensity),
-                                b.darkenColor(intensity)
+                                x = x,
+                                y = y,
+                                color = color.darkenColor(intensity)
                             )
                         }
                     }

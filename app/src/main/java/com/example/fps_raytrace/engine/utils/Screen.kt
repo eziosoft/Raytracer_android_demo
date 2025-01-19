@@ -2,8 +2,8 @@ package com.example.fps_raytrace.engine.utils
 
 import kotlin.math.abs
 
-class Screen(val w: Int, val h: Int) {
-    val bitmap = ByteArray(w * h * 4)
+class Screen(val width: Int, val height: Int) {
+    val bitmap = ByteArray(width * height * 4)
 
     init {
         clear()
@@ -11,25 +11,35 @@ class Screen(val w: Int, val h: Int) {
 
 
     fun clear(red: Int = 0, green: Int = 0, blue: Int = 0) {
-        for (i in 0 until w) {
-            for (j in 0 until h) {
+        for (i in 0 until width) {
+            for (j in 0 until height) {
                 setRGB(i, j, red, green, blue)
             }
         }
     }
 
     fun setRGB(x: Int, y: Int, red: Int, green: Int, blue: Int, alpha: Int = 0xFF) {
-        if (x < 0 || x >= w || y < 0 || y >= h) return
+        if (x < 0 || x >= width || y < 0 || y >= height) return
 
-        val offset = (y * w + x) * 4
+        val offset = (y * width + x) * 4
         bitmap[offset] = red.toByte()
         bitmap[offset + 1] = green.toByte()
         bitmap[offset + 2] = blue.toByte()
         bitmap[offset + 3] = alpha.toByte()
     }
 
+    fun setRGB(x: Int, y: Int, color: IntArray) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return
+
+        val offset = (y * width + x) * 4
+        bitmap[offset] = color[0].toByte()
+        bitmap[offset + 1] = color[1].toByte()
+        bitmap[offset + 2] = color[2].toByte()
+        bitmap[offset + 3] = 0xFF.toByte()
+    }
+
     fun getRGB(x: Int, y: Int): IntArray {
-        val offset = (y * w + x) * 4
+        val offset = (y * width + x) * 4
         return intArrayOf(
             bitmap[offset].toInt() and 0xFF,
             bitmap[offset + 1].toInt() and 0xFF,
@@ -113,6 +123,15 @@ class Screen(val w: Int, val h: Int) {
 
 
 fun Int.darkenColor(intensity: Float) = (this * intensity).toInt().coerceIn(0, 255)
+fun IntArray.darkenColor(intensity: Float) = intArrayOf(
+    this[0].darkenColor(intensity),
+    this[1].darkenColor(intensity),
+    this[2].darkenColor(intensity)
+)
+
+fun isTransparent(color: IntArray, transparentColor: Screen.Color): Boolean {
+    return color[0] == transparentColor.red && color[1] == transparentColor.green && color[2] == transparentColor.blue
+}
 
 
 

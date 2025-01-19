@@ -2,7 +2,7 @@ package com.example.fps_raytrace.engine.raycaster
 
 import com.example.fps_raytrace.engine.utils.Screen
 
- fun drawCross(screen: Screen, screenWidth: Int, screenHeight: Int) {
+fun drawCross(screen: Screen, screenWidth: Int, screenHeight: Int) {
     val crossSize = 10
     val x = screenWidth / 2 - crossSize / 2
     val y = screenHeight / 2 - crossSize / 2
@@ -25,4 +25,11 @@ import com.example.fps_raytrace.engine.utils.Screen
         255,
         255
     )
+}
+
+fun getTexturePixelColor(texture: IntArray, index: Int): IntArray {
+    val red = texture[index]
+    val green = texture[index + 1]
+    val blue = texture[index + 2]
+    return intArrayOf(red, green, blue)
 }

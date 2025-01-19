@@ -6,12 +6,12 @@ import kotlin.math.sin
 
 fun Screen.waveEffect(): Screen {
     val wave = 2
-    for (i in 0 until w) {
-        for (j in 0 until h) {
-            val x = (i + (sin(j.toDouble() / wave/10) * wave).toInt()) % w
-            val y = (j + (cos(i.toDouble() / wave/10) * wave).toInt()) % h
+    for (i in 0 until width) {
+        for (j in 0 until height) {
+            val x = (i + (sin(j.toDouble() / wave/10) * wave).toInt()) % width
+            val y = (j + (cos(i.toDouble() / wave/10) * wave).toInt()) % height
 
-            if (x < 0 || x >= w || y < 0 || y >= h) continue
+            if (x < 0 || x >= width || y < 0 || y >= height) continue
 
             val color = getRGB(x, y)
             setRGB(i, j, color[0], color[1], color[2])
@@ -27,25 +27,25 @@ fun Screen.blurEffect(): Screen {
     val weight = 1.0 / (size * size)
 
     val temp = ByteArray(bitmap.size)
-    for (i in 0 until w) {
-        for (j in 0 until h) {
+    for (i in 0 until width) {
+        for (j in 0 until height) {
             var r = 0
             var g = 0
             var b = 0
             for (k in -radius..radius) {
                 for (l in -radius..radius) {
-                    val x = (i + k).coerceIn(0, w - 1)
-                    val y = (j + l).coerceIn(0, h - 1)
+                    val x = (i + k).coerceIn(0, width - 1)
+                    val y = (j + l).coerceIn(0, height - 1)
                     val color = getRGB(x, y)
                     r += color[0]
                     g += color[1]
                     b += color[2]
                 }
             }
-            temp[(j * w + i) * 4] = (r * weight).toInt().toByte()
-            temp[(j * w + i) * 4 + 1] = (g * weight).toInt().toByte()
-            temp[(j * w + i) * 4 + 2] = (b * weight).toInt().toByte()
-            temp[(j * w + i) * 4 + 3] = 0xFF.toByte()
+            temp[(j * width + i) * 4] = (r * weight).toInt().toByte()
+            temp[(j * width + i) * 4 + 1] = (g * weight).toInt().toByte()
+            temp[(j * width + i) * 4 + 2] = (b * weight).toInt().toByte()
+            temp[(j * width + i) * 4 + 3] = 0xFF.toByte()
         }
     }
     bitmap.indices.forEach { bitmap[it] = temp[it] }

@@ -132,15 +132,13 @@ class RaytracerEngine(
         val drawSpriteTime = measureTime {
             enemies.sortedByDescending { it.distanceTo(player) }.forEach { enemy ->
                 drawEnemy(
-                    screen,
-                    player,
-                    enemy,
-                    wallDepths,
-                    guardSprite,
-                    cellSize,
-                    screenWidth,
-                    screenHeight,
-                    fovRad
+                    screen = screen,
+                    cellSize = cellSize,
+                    player = player,
+                    enemy = enemy,
+                    wallDepths = wallDepths,
+                    textureSet = guardSprite,
+                    fovRad = fovRad
                 )
             }
         }
@@ -165,8 +163,8 @@ class RaytracerEngine(
         val drawPistolTime = measureTime {
             screen.drawBitmap(
                 bitmap = pistolSprite.getFrame(player.mainPlayerShootingFrame)!!,
-                x = 2 * screen.w / 3 + (20 * sin(player.x)).toInt(),
-                y = (screen.h - 175 * 0.8f + 20 - 10 * sin(player.y)).toInt(),
+                x = 2 * screen.width / 3 + (20 * sin(player.x)).toInt(),
+                y = (screen.height - 175 * 0.8f + 20 - 10 * sin(player.y)).toInt(),
                 bitmapSizeX = 128,
                 bitmapSizeY = 128,
                 transparentColor = pistolSprite.TRANSPARENT_COLOR
