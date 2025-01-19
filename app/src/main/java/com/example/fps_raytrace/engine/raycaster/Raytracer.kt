@@ -30,6 +30,7 @@ import com.example.fps_raytrace.maps.MapObject
 import com.example.fps_raytrace.maps.findPositionBasedOnMapIndex
 import com.example.fps_raytrace.maps.getEnemiesFromMap
 import com.example.fps_raytrace.sprites.GuardSprite
+import com.example.fps_raytrace.sprites.OtherSprites
 import com.example.fps_raytrace.sprites.PistolSprite
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -69,6 +70,7 @@ class RaytracerEngine(
     // Sprites
     private val pistolSprite = PistolSprite(context)
     private val guardSprite = GuardSprite(context)
+    private val otherSprites = OtherSprites(context)
 
     private val playerPosition = findPositionBasedOnMapIndex(
         mapX = currentMap.MAP_X,
@@ -173,6 +175,22 @@ class RaytracerEngine(
                 bitmapSizeX = 128,
                 bitmapSizeY = 128,
                 transparentColor = pistolSprite.TRANSPARENT_COLOR
+            )
+        }
+
+        val drawSprites = measureTime {
+            drawSprite(
+                screen=screen,
+                cellSize=2,
+                fovRad=PLAYER_FOV,
+                player=player,
+                spriteX=65f,
+                spriteY=111f,
+                texture=otherSprites.light,
+                spriteBitmapSize=56,
+                wallDepths=wallDepths,
+                transparentColor=otherSprites.transparentColor,
+                scaleFactor = 0.2f
             )
         }
 

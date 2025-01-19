@@ -6,6 +6,7 @@ import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sprite
 import com.example.fps_raytrace.engine.utils.darkenColor
 import com.example.fps_raytrace.engine.utils.isTransparent
+import com.example.fps_raytrace.engine.utils.normalizeAngle
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
@@ -56,7 +57,7 @@ fun drawEnemy(
     var angle = atan2(dy, dx) - player.rotationRad
 
     // Normalize angle to be between -PI and PI
-    angle = (angle + PI) % (2 * PI) - PI
+    angle = angle.normalizeAngle()
 
     // Check if enemy is within player's FOV
     if (abs(angle) < fovRad / 2) {
@@ -99,6 +100,54 @@ fun drawEnemy(
                                 y = y,
                                 color = color.darkenColor(intensity)
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun drawSprite(
+    screen: Screen,
+    cellSize: Int,
+    fovRad: Float,
+    player: Player,
+    spriteX: Float,
+    spriteY: Float,
+    texture: IntArray,
+    spriteBitmapSize: Int,
+    wallDepths: FloatArray,
+    transparentColor: Screen.Color,
+    scaleFactor: Float
+) {
+    val dx = spriteX - player.x
+    val dy = spriteY - player.y
+
+    val distance = sqrt(dx * dx + dy * dy)
+
+    var angle = atan2(dy, dx) - player.rotationRad
+    angle = angle.normalizeAngle()
+
+    if (abs(angle) < fovRad / 2) {
+        val screenX = ((screen.width / 2) * (1 + angle / (fovRad / 2))).toInt()
+        val perceivedHeight = (screen.height / distance * cellSize * scaleFactor).toInt()
+        val bottomY = (screen.height / 2 + perceivedHeight / 2).coerceIn(0, screen.height - 1)
+        val topY = (bottomY - perceivedHeight).coerceIn(0, screen.height - 1)
+
+        for (y in topY..bottomY) {
+            for (x in (screenX - perceivedHeight / 2)..(screenX + perceivedHeight / 2)) {
+                if (x >= 0 && x < screen.width) {
+                    if (wallDepths[x] - (distance / cellSize) > -0.2) {
+                        val texX = ((x - (screenX - perceivedHeight / 2)).toFloat() / perceivedHeight * spriteBitmapSize).toInt() % spriteBitmapSize
+                        val texY = ((y - topY).toFloat() / perceivedHeight * spriteBitmapSize).toInt() % spriteBitmapSize
+                        val texIndex = (texY * spriteBitmapSize + texX) * 3
+
+                        val color = getTexturePixelColor(texture, texIndex)
+
+                        if (!isTransparent(color = color, transparentColor = transparentColor)) {
+                            val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
+                            screen.setRGB(x = x, y = y, color = color.darkenColor(intensity))
                         }
                     }
                 }

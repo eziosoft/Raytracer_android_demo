@@ -31,6 +31,17 @@ import kotlin.math.sin
 
 private const val SHOOT_DISTANCE = 5f
 
+enum class Moves {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+    SHOOT
+}
+
+
 enum class PlayerState {
     IDLE,
     WALKING,
