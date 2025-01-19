@@ -1,9 +1,12 @@
 package com.example.fps_raytrace.engine.raycaster
 
 import android.content.Context
-import com.example.fps_raytrace.Const.DRAW_MAP
-import com.example.fps_raytrace.Const.SHOOT_PLAYER_DAMAGE
+import com.example.fps_raytrace.engine.Const.DRAW_MAP
+import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.Const.PLAYER_FOV
+import com.example.fps_raytrace.engine.Const.PLAYER_ROTATION_SPEED_RAD
+import com.example.fps_raytrace.engine.Const.PLAYER_SPEED
 import com.example.fps_raytrace.engine.Moves
 import com.example.fps_raytrace.engine.Player
 import com.example.fps_raytrace.engine.PlayerState
@@ -46,10 +49,7 @@ class RaytracerEngine(
     context: Context,
     private val screenWidth: Int,
     private val screenHeight: Int,
-    private val fovRad: Float = 60.toRadian(),
-    private val moveStep: Float = 0.2f,
-    private val rotationStepRad: Float = 2f.toRadian(),
-    private val cellSize: Int = 2
+    private val cellSize: Int = 10
 ) {
     private val currentMap: Map = Map1
     private val wallTextures = Walls(context)
@@ -138,7 +138,7 @@ class RaytracerEngine(
                     enemy = enemy,
                     wallDepths = wallDepths,
                     textureSet = guardSprite,
-                    fovRad = fovRad
+                    fovRad = PLAYER_FOV
                 )
             }
         }
@@ -221,7 +221,7 @@ class RaytracerEngine(
     ) =
         runBlocking {
             val rayCount = screenWidth
-            val rayStep = fovRad / rayCount
+            val rayStep = PLAYER_FOV / rayCount
 
             // Precompute values to avoid recalculating in the loop
             val sinCache = FloatArray(rayCount)
@@ -476,29 +476,29 @@ class RaytracerEngine(
         var dr = 0f
 
         if (Moves.UP in pressedKeys) {
-            dx += moveStep * cos(player.rotationRad)
-            dy += moveStep * sin(player.rotationRad)
+            dx += PLAYER_SPEED * cos(player.rotationRad)
+            dy += PLAYER_SPEED * sin(player.rotationRad)
         }
         if (Moves.DOWN in pressedKeys) {
-            dx -= moveStep * cos(player.rotationRad)
-            dy -= moveStep * sin(player.rotationRad)
+            dx -= PLAYER_SPEED * cos(player.rotationRad)
+            dy -= PLAYER_SPEED * sin(player.rotationRad)
         }
 
         if (Moves.MOVE_LEFT in pressedKeys) {
-            dx -= moveStep * cos(player.rotationRad + 90.toRadian())
-            dy -= moveStep * sin(player.rotationRad + 90.toRadian())
+            dx -= PLAYER_SPEED * cos(player.rotationRad + 90.toRadian())
+            dy -= PLAYER_SPEED * sin(player.rotationRad + 90.toRadian())
         }
 
         if (Moves.MOVE_RIGHT in pressedKeys) {
-            dx += moveStep * cos(player.rotationRad + 90.toRadian())
-            dy += moveStep * sin(player.rotationRad + 90.toRadian())
+            dx += PLAYER_SPEED * cos(player.rotationRad + 90.toRadian())
+            dy += PLAYER_SPEED * sin(player.rotationRad + 90.toRadian())
         }
 
         if (Moves.LEFT in pressedKeys) {
-            dr -= rotationStepRad
+            dr -= PLAYER_ROTATION_SPEED_RAD
         }
         if (Moves.RIGHT in pressedKeys) {
-            dr += rotationStepRad
+            dr += PLAYER_ROTATION_SPEED_RAD
         }
 
         if (Moves.SHOOT in pressedKeys) {

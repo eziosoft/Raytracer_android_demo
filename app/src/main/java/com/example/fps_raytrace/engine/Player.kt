@@ -1,11 +1,10 @@
 package com.example.fps_raytrace.engine
 
 import aStar
-import android.util.Log
-import com.example.fps_raytrace.Const.ENEMIES_CAN_SHOOT
-import com.example.fps_raytrace.Const.ENEMIES_WALK_TO_PLAYER
-import com.example.fps_raytrace.Const.PLAYER_A_START_WALK
-import com.example.fps_raytrace.Const.SHOOT_ENEMY_DAMAGE
+import com.example.fps_raytrace.engine.Const.ENEMIES_CAN_SHOOT
+import com.example.fps_raytrace.engine.Const.ENEMIES_WALK_TO_PLAYER
+import com.example.fps_raytrace.engine.Const.PLAYER_A_START_WALK
+import com.example.fps_raytrace.engine.Const.SHOOT_ENEMY_DAMAGE
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.PlayerState.DEAD
 import com.example.fps_raytrace.engine.PlayerState.DYING
