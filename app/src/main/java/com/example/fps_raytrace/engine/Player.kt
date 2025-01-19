@@ -138,25 +138,6 @@ fun Player.animate(
             }
         }
     }
-
-
-    if (isMainPlayer) {
-        if (timer % 10 == 0) {
-//            aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
-//                Log.d("Player", "currentPosition: $currentPosition, nextPosition: $nextPosition")
-//                val nextRotationRad = angleTo(Player(false, x = nextPosition.first, y = nextPosition.second))
-//
-//                rotationRad = nextRotationRad
-//                val dx = 0.1f * cos(player.rotationRad)
-//                val dy = 0.1f * sin(player.rotationRad)
-//                player.x += dx
-//                player.y += dy
-//                player.walkToPosition(map, cellSize, nextPosition)
-//            })
-        }
-    }
-
-
 }
 
 private var mapForAStar: Array<Array<Int>>? = null
@@ -170,7 +151,7 @@ private fun Player.aStar(
     callBack: (
         player: Player,
         currentPosition: Pair<Float, Float>,
-        nextPosition: Pair<Float, Float>
+        nextPosition: Pair<Float, Float>,
     ) -> Unit
 ) {
     val player = this
