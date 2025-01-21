@@ -16,6 +16,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomEnd
+import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Modifier
@@ -125,9 +127,9 @@ class MainActivity : ComponentActivity() {
 
 
                     if (started) {
-                        Joystick(modifier = Modifier.align(BottomEnd)) { x, y ->
+                        Joystick(modifier = Modifier.align(BottomStart)) { x, y ->
                             pressedKeys.clear()
-                            raytracerEngine.movePlayer(x / 20f, -y / 3f)
+                            raytracerEngine.movePlayer(0f, -y / 3f, x/5)
                         }
 
                         var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
@@ -257,6 +259,17 @@ class MainActivity : ComponentActivity() {
                 }
                 .fillMaxSize()
                 .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume() // Consume the gesture
+                            raytracerEngine.movePlayer(dragAmount.x / 300f, 0f, 0f)
+//                            cameraX += dragAmount.x // Adjust horizontal camera rotation
+//                            cameraY += dragAmount.y // Adjust vertical camera rotation
+//                            println("Camera moved: x=$cameraX, y=$cameraY")
+                        },
+                    )
+                }
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {

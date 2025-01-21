@@ -180,16 +180,16 @@ class RaytracerEngine(
 
         val drawSprites = measureTime {
             drawSprite(
-                screen=screen,
-                cellSize=2,
-                fovRad=PLAYER_FOV,
-                player=player,
-                spriteX=65f,
-                spriteY=111f,
-                texture=otherSprites.light,
-                spriteBitmapSize=56,
-                wallDepths=wallDepths,
-                transparentColor=otherSprites.transparentColor,
+                screen = screen,
+                cellSize = 2,
+                fovRad = PLAYER_FOV,
+                player = player,
+                spriteX = 65f,
+                spriteY = 111f,
+                texture = otherSprites.light,
+                spriteBitmapSize = 56,
+                wallDepths = wallDepths,
+                transparentColor = otherSprites.transparentColor,
                 scaleFactor = 0.2f
             )
         }
@@ -446,10 +446,13 @@ class RaytracerEngine(
     }
 
 
-    fun movePlayer(x: Float, y: Float) {
+    fun movePlayer(x: Float, y: Float, lr: Float) {
         var dx = 0f
         var dy = 0f
         var dr = 0f
+
+        dx = lr * cos(player.rotationRad + 90f)
+        dy = lr * sin(player.rotationRad + 90f)
 
         dx += y * cos(player.rotationRad) // delta x
         dy += y * sin(player.rotationRad) // delta y
