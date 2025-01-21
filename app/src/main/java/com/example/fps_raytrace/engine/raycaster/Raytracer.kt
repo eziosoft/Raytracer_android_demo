@@ -1,6 +1,8 @@
 package com.example.fps_raytrace.engine.raycaster
 
+import aStar
 import android.content.Context
+import android.util.Log
 import com.example.fps_raytrace.engine.Const.DRAW_MAP
 import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
@@ -27,15 +29,21 @@ import com.example.fps_raytrace.engine.utils.isWall
 import com.example.fps_raytrace.maps.Map
 import com.example.fps_raytrace.maps.Map1
 import com.example.fps_raytrace.maps.MapObject
+import com.example.fps_raytrace.maps.convertMapTo2DArrayForA_Star
+import com.example.fps_raytrace.maps.findArrayIndexesFromPosition
 import com.example.fps_raytrace.maps.findPositionBasedOnMapIndex
+import com.example.fps_raytrace.maps.findPositionFromArrayIndexes
 import com.example.fps_raytrace.maps.getEnemiesFromMap
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.OtherSprites
 import com.example.fps_raytrace.sprites.PistolSprite
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -72,6 +80,11 @@ class RaytracerEngine(
     private val guardSprite = GuardSprite(context)
     private val otherSprites = OtherSprites(context)
 
+
+    val path: MutableList<Pair<Int, Int>> = mutableListOf()
+
+    val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
+
     private val playerPosition = findPositionBasedOnMapIndex(
         mapX = currentMap.MAP_X,
         mapY = currentMap.MAP_Y,
@@ -100,6 +113,8 @@ class RaytracerEngine(
         sound.loadSound(R.raw.gunshot1)
         sound.loadSound(R.raw.mandeathscream)
         sound.loadSound(R.raw.step)
+
+
     }
 
     fun playNewMusic(resId: Int, isLooping: Boolean) {
@@ -178,20 +193,41 @@ class RaytracerEngine(
             )
         }
 
+
+        if (System.currentTimeMillis() % 100 == 0L) {
+            Log.d("aaa", "aStar")
+            val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
+            val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
+            val end = Pair(42, 22) // exit position
+
+            val newPath = aStar(start, end, currentMap.convertMapTo2DArrayForA_Star())
+
+            newPath?.let {
+                path.clear()
+                path.addAll(it)
+            }
+        }
+
         val drawSprites = measureTime {
-            drawSprite(
-                screen = screen,
-                cellSize = 2,
-                fovRad = PLAYER_FOV,
-                player = player,
-                spriteX = 65f,
-                spriteY = 111f,
-                texture = otherSprites.light,
-                spriteBitmapSize = 56,
-                wallDepths = wallDepths,
-                transparentColor = otherSprites.transparentColor,
-                scaleFactor = 0.2f
-            )
+            path.forEachIndexed { index, it ->
+                if (index > 1) { // for some reason game has problems when drawing sprite on player position
+                    val position = it.findPositionFromArrayIndexes(cellSize)
+                    drawSprite(
+                        screen = screen,
+                        cellSize = 2,
+                        fovRad = PLAYER_FOV,
+                        player = player,
+                        spriteX = position.first,
+                        spriteY = position.second,
+                        texture = otherSprites.light,
+                        spriteBitmapSize = 56,
+                        wallDepths = wallDepths,
+                        transparentColor = otherSprites.transparentColor,
+                        scaleFactor = 1f
+                    )
+                }
+            }
+
         }
 
         // draw cross when enemy is in range
