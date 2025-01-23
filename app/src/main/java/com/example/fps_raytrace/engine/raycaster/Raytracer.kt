@@ -81,7 +81,7 @@ class RaytracerEngine(
     private val otherSprites = OtherSprites(context)
 
 
-    val path: MutableList<Pair<Int, Int>> = mutableListOf()
+    val path: MutableList<Pair<Float, Float>> = mutableListOf()
 
     val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
 
@@ -181,6 +181,36 @@ class RaytracerEngine(
         }
 
 
+        if (System.currentTimeMillis() % 100 == 0L) {
+            Log.d("aaa", "aStar")
+            val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
+            val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
+            val end = Pair(42, 22) // exit position
+
+            val newPath = aStar(start, end, currentMap.convertMapTo2DArrayForA_Star(), addStartNode = false)?.map { it.findPositionFromArrayIndexes(cellSize) }
+
+            path.clear()
+            path.addAll(newPath ?: emptyList())
+        }
+
+        val drawSprites = measureTime {
+            for (i in path.size - 1 downTo 1) {
+                drawSprite(
+                    screen = screen,
+                    cellSize = 2,
+                    fovRad = PLAYER_FOV,
+                    player = player,
+                    spriteX = path[i].first,
+                    spriteY = path[i].second,
+                    texture = otherSprites.light,
+                    spriteBitmapSize = 56,
+                    wallDepths = wallDepths,
+                    transparentColor = otherSprites.transparentColor,
+                    scaleFactor = 1f
+                )
+            }
+        }
+
         // draw pistol
         val drawPistolTime = measureTime {
             screen.drawBitmap(
@@ -191,43 +221,6 @@ class RaytracerEngine(
                 bitmapSizeY = 128,
                 transparentColor = pistolSprite.TRANSPARENT_COLOR
             )
-        }
-
-
-        if (System.currentTimeMillis() % 100 == 0L) {
-            Log.d("aaa", "aStar")
-            val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
-            val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
-            val end = Pair(42, 22) // exit position
-
-            val newPath = aStar(start, end, currentMap.convertMapTo2DArrayForA_Star())
-
-            newPath?.let {
-                path.clear()
-                path.addAll(it)
-            }
-        }
-
-        val drawSprites = measureTime {
-            path.forEachIndexed { index, it ->
-                if (index > 1) { // for some reason game has problems when drawing sprite on player position
-                    val position = it.findPositionFromArrayIndexes(cellSize)
-                    drawSprite(
-                        screen = screen,
-                        cellSize = 2,
-                        fovRad = PLAYER_FOV,
-                        player = player,
-                        spriteX = position.first,
-                        spriteY = position.second,
-                        texture = otherSprites.light,
-                        spriteBitmapSize = 56,
-                        wallDepths = wallDepths,
-                        transparentColor = otherSprites.transparentColor,
-                        scaleFactor = 1f
-                    )
-                }
-            }
-
         }
 
         // draw cross when enemy is in range

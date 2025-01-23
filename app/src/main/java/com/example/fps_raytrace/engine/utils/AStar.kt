@@ -12,7 +12,7 @@ data class Node(val x: Int, val y: Int, var g: Int, var h: Int, var parent: Node
     }
 }
 
-fun aStar(start: Pair<Int, Int>, end: Pair<Int, Int>, grid: Array<Array<Int>>): List<Pair<Int, Int>>? {
+fun aStar(start: Pair<Int, Int>, end: Pair<Int, Int>, grid: Array<Array<Int>>, addStartNode:Boolean = false): List<Pair<Int, Int>>? {
     val rows = grid.size
     val cols = grid[0].size
 

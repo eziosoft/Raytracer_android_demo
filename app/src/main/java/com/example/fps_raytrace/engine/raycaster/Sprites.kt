@@ -20,22 +20,20 @@ fun drawEnemy(
     textureSet: Sprite,
     wallDepths: FloatArray
 ) {
-    // Calculate the angle from the enemy to the player
-    val angleToPlayer = atan2(player.y - enemy.y, player.x - enemy.x)
-
-    // Calculate the difference between the enemy's rotation and the angle to the player
-    var diff = angleToPlayer - enemy.rotationRad
-
-    // Normalize the angle difference to be between -PI and PI
-    diff = (diff + PI) % (2 * PI) - PI
-
-    // Calculate the texture index, ensuring it falls within the valid range
     val numTextures = 8  // Assuming there are 8 textures in the textureSet
-    val textureIndex =
-        ((numTextures - ((diff / (2 * PI) * numTextures).toInt() % numTextures)) + numTextures) % numTextures
 
 
-    // Fetch the correct texture for rendering
+    // Reverse the direction of diff calculation
+    var diff = enemy.rotationRad - atan2(player.y - enemy.y, player.x - enemy.x)
+
+// Normalize the angle difference to [0, 2 * PI)
+    val normalizedDiff = (diff + 2 * PI) % (2 * PI)
+
+// Calculate the texture index
+    val textureIndex = ((normalizedDiff / (2 * PI) * numTextures).toInt()) % numTextures
+
+
+// Fetch the correct texture for rendering
     val texture = textureSet.getTexture(
         direction = textureIndex,
         state = enemy.state,

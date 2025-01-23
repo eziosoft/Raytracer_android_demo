@@ -10,7 +10,7 @@ class OtherSprites(context: Context) {
     private val spriteSheet = readPpmImage(context, R.raw.sprites1)
     val transparentColor = Screen.Color(167, 107, 107)
 
-    val light = getSubArray(236, 16, 56, 56, 320)
+    val light = getSubArray(88, 80, 56, 56, 320)
 
 
     // Main array is unknown size, so we need to pass the width and height

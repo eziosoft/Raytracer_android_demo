@@ -51,7 +51,7 @@ enum class PlayerState {
 }
 
 data class Player(
-    val isMainPlayer: Boolean,
+    val isMainPlayer: Boolean=false,
     var mainPlayerShootingFrame: Int = 0,
     var state: PlayerState = IDLE,
     var health: Int = 100,
