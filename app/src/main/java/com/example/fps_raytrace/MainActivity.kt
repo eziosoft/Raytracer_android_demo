@@ -126,31 +126,36 @@ class MainActivity : ComponentActivity() {
                     )
 
 
+                    var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
+
                     if (started) {
-                        Joystick(modifier = Modifier.align(BottomStart)) { x, y ->
-                            pressedKeys.clear()
-                            raytracerEngine.movePlayer(0f, -y / 3f, x/5)
-                        }
-
-                        var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
-
-                        LaunchedEffect(Unit, isRunning) {
-                            while (isRunning) {
-                                enemies = raytracerEngine.getAliveEnemiesCount()
-                                delay(1000)
+                        GlitchEffect(modifier = Modifier.fillMaxSize()) {
+                            Joystick(modifier = Modifier.align(BottomStart)) { x, y ->
+                                pressedKeys.clear()
+                                raytracerEngine.movePlayer(0f, -y / 3f, x / 5)
                             }
+
+
+                            LaunchedEffect(Unit, isRunning) {
+                                while (isRunning) {
+                                    enemies = raytracerEngine.getAliveEnemiesCount()
+                                    delay(1000)
+                                }
+                            }
+
+
+                            Text(
+                                text = enemies.toString(),
+                                fontSize = 40.sp,
+                                color = Color.White,
+                                modifier = Modifier
+                                    .align(TopCenter)
+                                    .padding(16.dp)
+                                    .blendMode(BlendMode.Difference)
+                            )
                         }
 
-                        Text(
-                            text = enemies.toString(),
-                            fontSize = 40.sp,
-                            fontFamily = FontFamily.Serif,
-                            color = Color.White,
-                            modifier = Modifier
-                                .align(TopCenter)
-                                .padding(16.dp)
-                                .blendMode(BlendMode.Difference)
-                        )
+
                     } else
                         StartScreen(modifier = Modifier.align(Center),
                             onStart = {
@@ -263,10 +268,7 @@ class MainActivity : ComponentActivity() {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
                             change.consume() // Consume the gesture
-                            raytracerEngine.movePlayer(dragAmount.x / 300f, 0f, 0f)
-//                            cameraX += dragAmount.x // Adjust horizontal camera rotation
-//                            cameraY += dragAmount.y // Adjust vertical camera rotation
-//                            println("Camera moved: x=$cameraX, y=$cameraY")
+                            raytracerEngine.movePlayer(dragAmount.x / 200f, 0f, 0f)
                         },
                     )
                 }

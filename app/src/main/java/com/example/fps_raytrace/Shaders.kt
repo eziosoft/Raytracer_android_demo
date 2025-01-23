@@ -105,9 +105,9 @@ val glitchShader = """
 
        // Chromatic aberration (slight color channel offsets)
        half3 glitchColor;
-       glitchColor.r = composable.eval(float2(displacedCoord.x - 10.0 * noise, displacedCoord.y)).r;
+       glitchColor.r = composable.eval(float2(displacedCoord.x - 20.0 * noise, displacedCoord.y)).r;
        glitchColor.g = desaturatedColor.g;
-       glitchColor.b = composable.eval(float2(displacedCoord.x + 10.0 * noise, displacedCoord.y)).b;
+       glitchColor.b = composable.eval(float2(displacedCoord.x + 20.0 * noise, displacedCoord.y)).b;
 
        return half4(glitchColor, 1.0);
    }

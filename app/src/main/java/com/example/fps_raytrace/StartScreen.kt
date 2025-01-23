@@ -96,7 +96,6 @@ fun StartScreen(modifier: Modifier = Modifier, onStart: () -> Unit = {}) {
                 text = stringResource(R.string.app_name),
                 color = Color.White,
                 fontSize = 80.sp,
-                fontFamily = FontFamily.Serif
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -111,6 +110,53 @@ fun StartScreen(modifier: Modifier = Modifier, onStart: () -> Unit = {}) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun GlitchEffect(modifier: Modifier, content: @Composable () -> Unit){
+    // Create a RuntimeShader instance
+    val runtimeShader = remember { RuntimeShader(glitchShader) }
+
+    // Animatable to control time uniform
+    val time = remember { Animatable(0f) }
+
+    // Start animating the time value
+    LaunchedEffect(Unit) {
+        time.animateTo(
+            targetValue = 50000f, // Effectively infinite animation
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, easing = LinearEasing)
+            )
+        )
+    }
+
+    val resolution = LocalDensity.current.run {
+        val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
+        val height = LocalConfiguration.current.screenHeightDp.dp.toPx()
+        floatArrayOf(width, height)
+    }
+
+    // Set the uniform values for the shader
+    LaunchedEffect(time.value) {
+        runtimeShader.setFloatUniform("time", time.value)
+        runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp)) // Rounded corners
+            .blendMode(BlendMode.Screen) // Set blend mode
+            .graphicsLayer { // Use graphicsLayer for RenderEffect
+                clip = true
+                renderEffect = RenderEffect
+                    .createRuntimeShaderEffect(runtimeShader, "composable")
+                    .asComposeRenderEffect()
+            }
+            .background(Color.Black) // Set background color
+    ) {
+        content()
     }
 }
 
