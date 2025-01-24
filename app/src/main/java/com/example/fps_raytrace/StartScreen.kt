@@ -11,11 +11,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
@@ -38,7 +35,6 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,46 +42,9 @@ import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 
 @Composable
 fun StartScreen(modifier: Modifier = Modifier, onStart: () -> Unit = {}) {
-    // Create a RuntimeShader instance
-    val runtimeShader = remember { RuntimeShader(glitchShader) }
-
-    // Animatable to control time uniform
-    val time = remember { Animatable(0f) }
-
-    // Start animating the time value
-    LaunchedEffect(Unit) {
-        time.animateTo(
-            targetValue = 50000f, // Effectively infinite animation
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1000, easing = LinearEasing)
-            )
-        )
-    }
-
-    val resolution = LocalDensity.current.run {
-        val width = LocalConfiguration.current.screenWidthDp.dp.toPx()
-        val height = LocalConfiguration.current.screenHeightDp.dp.toPx()
-        floatArrayOf(width, height)
-    }
-
-    // Set the uniform values for the shader
-    LaunchedEffect(time.value) {
-        runtimeShader.setFloatUniform("time", time.value)
-        runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
-    }
-
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp)) // Rounded corners
-            .blendMode(BlendMode.Screen) // Set blend mode
-            .graphicsLayer { // Use graphicsLayer for RenderEffect
-                clip = true
-                renderEffect = RenderEffect
-                    .createRuntimeShaderEffect(runtimeShader, "composable")
-                    .asComposeRenderEffect()
-            }
-            .background(Color.Black) // Set background color
     ) {
         Column(
             modifier = Modifier.padding(20.dp),

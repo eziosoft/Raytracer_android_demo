@@ -114,22 +114,24 @@ class MainActivity : ComponentActivity() {
 
                     RayCaster(raytracer = raytracerEngine)
 
-                    LinearProgressIndicator(
-                        progress = { healthProgress.value },
-                        color = Color.Red,
-                        strokeCap = StrokeCap.Square,
-                        gapSize = 1.dp,
-                        drawStopIndicator = {},
-                        modifier = Modifier
-                            .height(10.dp)
-                            .align(Alignment.BottomStart)
-                    )
+
 
 
                     var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
+                    GlitchEffect(modifier = Modifier.fillMaxSize()) {
+                        if (started) {
 
-                    if (started) {
-                        GlitchEffect(modifier = Modifier.fillMaxSize()) {
+                            LinearProgressIndicator(
+                                progress = { healthProgress.value },
+                                color = Color.Red,
+                                strokeCap = StrokeCap.Square,
+                                gapSize = 1.dp,
+                                drawStopIndicator = {},
+                                modifier = Modifier
+                                    .height(10.dp)
+                                    .align(Alignment.BottomStart)
+                            )
+
                             Joystick(modifier = Modifier.align(BottomStart)) { x, y ->
                                 pressedKeys.clear()
                                 raytracerEngine.movePlayer(0f, -y / 3f, x / 5)
@@ -143,7 +145,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-
                             Text(
                                 text = enemies.toString(),
                                 fontSize = 40.sp,
@@ -153,15 +154,13 @@ class MainActivity : ComponentActivity() {
                                     .padding(16.dp)
                                     .blendMode(BlendMode.Difference)
                             )
-                        }
-
-
-                    } else
-                        StartScreen(modifier = Modifier.align(Center),
-                            onStart = {
-                                started = true
-                            }
-                        )
+                        } else
+                            StartScreen(modifier = Modifier.align(Center),
+                                onStart = {
+                                    started = true
+                                }
+                            )
+                    }
                 }
             }
         }
@@ -178,7 +177,7 @@ class MainActivity : ComponentActivity() {
         var fpsTimer = remember { System.currentTimeMillis() }
 
         // Create a RuntimeShader instance
-        val runtimeShader = remember { RuntimeShader(analogShader) }
+        val runtimeShader = remember { RuntimeShader(blackAndWhiteDitheringWithOutlineAndNoise) }
         // Noise intensity (you can make this a parameter if you want to control it dynamically)
         var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
 
