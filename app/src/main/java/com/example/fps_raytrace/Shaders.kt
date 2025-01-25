@@ -76,7 +76,7 @@ val glitchShader = """
    uniform shader composable; // The base image shader
    uniform float time; // Time uniform for animated effects
    uniform float2 resolution; // Screen resolution
-   uniform float intensity; // Intensity of the noise effect
+
 
    half4 main(float2 fragCoord) {
        // Normalize coordinates
@@ -84,10 +84,9 @@ val glitchShader = """
 
        // Random noise for glitch effect
        float noise = fract(sin(dot(uv * time, float2(12.9898, 78.233))) * 43758.5453);
-       float glitchStrength =intensity * (sin(time * 2.0) * 0.5 + 0.5)/2.0; // Oscillating glitch intensity
-       
+       float glitchStrength = (sin(time * 2.0) * 0.5 + 0.5)/2.0; // Oscillating glitch intensity       
        // Horizontal jitter
-       float jitter = (intensity * sin(5.0 + fragCoord.y * 0.1) * 0.005) * resolution.x * glitchStrength;
+       float jitter = (sin(time * 5.0 + fragCoord.y * 0.1) * 0.005) * resolution.x * glitchStrength;
 
        // Vertical bands
        float verticalBand = step(0.9, fract(sin(fragCoord.x * 0.05 + time) * 43758.5453)) * 0.5;
