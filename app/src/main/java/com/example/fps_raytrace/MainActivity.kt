@@ -58,6 +58,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.fps_raytrace.composable.Joystick
 import com.example.fps_raytrace.engine.Moves
+import com.example.fps_raytrace.engine.fullScreenEffects.blurBasedOnDepth
+import com.example.fps_raytrace.engine.fullScreenEffects.depthMap
 import com.example.fps_raytrace.engine.raycaster.RaytracerEngine
 import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
@@ -177,7 +179,7 @@ class MainActivity : ComponentActivity() {
         var fpsTimer = remember { System.currentTimeMillis() }
 
         // Create a RuntimeShader instance
-        val runtimeShader = remember { RuntimeShader(blackAndWhiteDitheringWithOutlineAndNoise) }
+        val runtimeShader = remember { RuntimeShader(emptyShader) }
         // Noise intensity (you can make this a parameter if you want to control it dynamically)
         var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
 
@@ -197,7 +199,8 @@ class MainActivity : ComponentActivity() {
                     raytracer.gameLoop(
                         pressedKeys = pressedKeys,
                         effects = { screen ->
-                            screen
+//                            screen
+                            screen.depthMap()
                         },
                         onFrame = { screen ->
                             bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(screen.getByteArray()))

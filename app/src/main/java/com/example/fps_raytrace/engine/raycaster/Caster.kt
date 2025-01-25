@@ -44,7 +44,8 @@ fun renderSurface(
             screenY,
             red.darkenColor(0.5f),
             green.darkenColor(0.5f),
-            blue.darkenColor(0.5f)
+            blue.darkenColor(0.5f),
+            depth = distance
         )
     }
 }
@@ -139,7 +140,8 @@ private fun drawWallColumn(
             screenColumn, screenY,
             red.darkenColor(lightIntensity),
             green.darkenColor(lightIntensity),
-            blue.darkenColor(lightIntensity)
+            blue.darkenColor(lightIntensity),
+            depth = wallDistance
         )
     }
 }
