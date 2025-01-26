@@ -141,7 +141,7 @@ private fun drawWallColumn(
             red.darkenColor(lightIntensity),
             green.darkenColor(lightIntensity),
             blue.darkenColor(lightIntensity),
-            depth = 255 - ((wallDistance / 10f).coerceIn(0f, 1f) * 255).toInt()
+            depth = ((wallDistance / 10f).coerceIn(0f, 1f) * 255).toInt()
         )
     }
 }
