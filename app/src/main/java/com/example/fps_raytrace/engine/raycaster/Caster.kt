@@ -45,7 +45,7 @@ fun renderSurface(
             red.darkenColor(0.5f),
             green.darkenColor(0.5f),
             blue.darkenColor(0.5f),
-            depth = distance
+            depth = 255 - ((distance / 10f).coerceIn(0f, 1f) * 255).toInt()
         )
     }
 }
@@ -141,7 +141,7 @@ private fun drawWallColumn(
             red.darkenColor(lightIntensity),
             green.darkenColor(lightIntensity),
             blue.darkenColor(lightIntensity),
-            depth = wallDistance
+            depth = 255 - ((wallDistance / 10f).coerceIn(0f, 1f) * 255).toInt()
         )
     }
 }

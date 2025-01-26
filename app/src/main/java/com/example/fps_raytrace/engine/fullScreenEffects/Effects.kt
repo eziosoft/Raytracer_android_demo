@@ -90,16 +90,14 @@ fun Screen.blurBasedOnDepth(): Screen {
     return this
 }
 
-fun Screen.depthMap():Screen{
+fun Screen.depthMap(): Screen {
     val temp = ByteArray(bitmap.size)
     for (i in 0 until width) {
         for (j in 0 until height) {
-            val depth = (getDepth(i, j)/10f).coerceIn(0f, 1f)
-//            Log.d("aaa", "depthMap: $depth")
-            val color = 255-(depth * 255).toInt()
-            temp[(j * width + i) * 4] = color.toByte()
-            temp[(j * width + i) * 4 + 1] = color.toByte()
-            temp[(j * width + i) * 4 + 2] = color.toByte()
+            val color = getDepth(i, j)
+            temp[(j * width + i) * 4] = color
+            temp[(j * width + i) * 4 + 1] = color
+            temp[(j * width + i) * 4 + 2] = color
             temp[(j * width + i) * 4 + 3] = 0xFF.toByte()
         }
     }
