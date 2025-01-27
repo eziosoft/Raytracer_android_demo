@@ -45,7 +45,7 @@ fun renderSurface(
             red.darkenColor(0.5f),
             green.darkenColor(0.5f),
             blue.darkenColor(0.5f),
-            depth = 255 - ((distance / 10f).coerceIn(0f, 1f) * 255).toInt()
+            depth = ((distance / 10f).coerceIn(0f, 1f) * 255).toInt()
         )
     }
 }

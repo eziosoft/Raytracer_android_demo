@@ -96,7 +96,8 @@ fun drawEnemy(
                             screen.setRGB(
                                 x = x,
                                 y = y,
-                                color = color.darkenColor(intensity)
+                                color = color.darkenColor(intensity),
+                                depth = ((distance / 10).coerceIn(0f, 1f) * 255).toInt()
                             )
                         }
                     }
@@ -145,7 +146,7 @@ fun drawSprite(
 
                         if (!isTransparent(color = color, transparentColor = transparentColor)) {
                             val intensity = (1.0f - (distance / 30.0f)).coerceIn(0.2f, 1f)
-                            screen.setRGB(x = x, y = y, color = color.darkenColor(intensity))
+                            screen.setRGB(x = x, y = y, color = color.darkenColor(intensity), depth = ((distance / 10).coerceIn(0f, 1f) * 255).toInt())
                         }
                     }
                 }

@@ -35,7 +35,7 @@ class Screen(val width: Int, val height: Int) {
         depthMap[y * width + x] = depth.toByte()
     }
 
-    fun setRGB(x: Int, y: Int, color: IntArray) {
+    fun setRGB(x: Int, y: Int, color: IntArray, depth: Int =0) {
         if (x < 0 || x >= width || y < 0 || y >= height) return
 
         val offset = (y * width + x) * 4
@@ -43,6 +43,8 @@ class Screen(val width: Int, val height: Int) {
         bitmap[offset + 1] = color[1].toByte()
         bitmap[offset + 2] = color[2].toByte()
         bitmap[offset + 3] = 0xFF.toByte()
+
+        depthMap[y * width + x] = depth.toByte()
     }
 
     fun getRGB(x: Int, y: Int): IntArray {
