@@ -1,4 +1,4 @@
-import com.example.fps_raytrace.maps.Map1
+import com.example.fps_raytrace.maps.GameMap1
 import com.example.fps_raytrace.maps.convertMapTo2DArrayForA_Star
 import com.example.fps_raytrace.maps.printMap
 import java.util.PriorityQueue
@@ -86,7 +86,7 @@ private fun reconstructPath(node: Node): List<Pair<Int, Int>> {
 
 // Example usage
 fun main() {
-    val map = Map1.convertMapTo2DArrayForA_Star()
+    val map = GameMap1.convertMapTo2DArrayForA_Star()
 
     val start = Pair(55, 29)
     val end = Pair(42, 22)
@@ -100,7 +100,7 @@ fun main() {
     map[start.first][start.second] = 100
     map[end.first][end.second] = 101
 
-    println(map.printMap())
+    println(map.printMap(56, 32))
 
     if (path != null) {
         println("Path found: $path")

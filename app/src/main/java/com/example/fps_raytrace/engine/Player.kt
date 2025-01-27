@@ -17,7 +17,7 @@ import com.example.fps_raytrace.engine.utils.WallType
 import com.example.fps_raytrace.engine.utils.isWall
 import com.example.fps_raytrace.engine.utils.normalizeAngle
 import com.example.fps_raytrace.engine.utils.toRadian
-import com.example.fps_raytrace.maps.Map
+import com.example.fps_raytrace.maps.GameMap
 import com.example.fps_raytrace.maps.convertMapTo2DArrayForA_Star
 import com.example.fps_raytrace.maps.findArrayIndexesFromPosition
 import com.example.fps_raytrace.maps.findPositionFromArrayIndexes
@@ -68,7 +68,7 @@ data class Player(
 
 fun Player.animate(
     newState: PlayerState? = null,
-    map: Map,
+    gameMap: GameMap,
     cellSize: Int,
     mainPlayer: Player? = null,
     isWallBetween: (() -> Boolean)? = null,
@@ -89,19 +89,19 @@ fun Player.animate(
         WALKING -> {
             walk()
             if (!isMainPlayer) {
-                walkRandom(map, cellSize, mainPlayer = mainPlayer)
+                walkRandom(gameMap, cellSize, mainPlayer = mainPlayer)
             } else {
 
                 if (PLAYER_A_START_WALK) {
                     if (goToPosition == null) {
-                        aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
+                        aStar(gameMap, cellSize, callBack = { player, currentPosition, nextPosition ->
                             player.goToPosition = nextPosition
                         })
                     }
 
                     goToPosition?.let { position ->
-                        if (walkToPosition(map, cellSize, position)) {
-                            aStar(map, cellSize, callBack = { player, currentPosition, nextPosition ->
+                        if (walkToPosition(gameMap, cellSize, position)) {
+                            aStar(gameMap, cellSize, callBack = { player, currentPosition, nextPosition ->
                                 player.goToPosition = nextPosition
                             })
                         }
@@ -145,7 +145,7 @@ private var aStarJob: Job? = null
 private val aStarScope = CoroutineScope(Dispatchers.IO)
 
 private fun Player.aStar(
-    map: Map,
+    gameMap: GameMap,
     cellSize: Int,
     gotoCell: Pair<Int, Int> = Pair(42, 22),
     callBack: (
@@ -157,7 +157,7 @@ private fun Player.aStar(
     val player = this
     aStarJob = aStarScope.launch {
         if (mapForAStar == null) {
-            mapForAStar = map.convertMapTo2DArrayForA_Star()
+            mapForAStar = gameMap.convertMapTo2DArrayForA_Star()
         }
 
         val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
@@ -245,7 +245,7 @@ fun Player.inShotAngle(player: Player): Boolean {
 }
 
 
-fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer: Player? = null) {
+fun Player.walkRandom(gameMap: GameMap, cellSize: Int, padding: Float = 0.2f, mainPlayer: Player? = null) {
     // Calculate movement deltas based on current rotation
     val dx = 0.1f * cos(this.rotationRad)
     val dy = 0.1f * sin(this.rotationRad)
@@ -261,9 +261,9 @@ fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer
     if (isWall(
             newX + dx.sign * padding,
             this.y,
-            map.MAP,
-            map.MAP_X,
-            map.MAP_Y,
+            gameMap.MAP,
+            gameMap.MAP_X,
+            gameMap.MAP_Y,
             cellSize
         ) == WallType.NONE
     ) {
@@ -275,9 +275,9 @@ fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer
     if (isWall(
             this.x,
             newY + dy.sign * padding,
-            map.MAP,
-            map.MAP_X,
-            map.MAP_Y,
+            gameMap.MAP,
+            gameMap.MAP_X,
+            gameMap.MAP_Y,
             cellSize
         ) == WallType.NONE
     ) {
@@ -303,7 +303,7 @@ fun Player.walkRandom(map: Map, cellSize: Int, padding: Float = 0.2f, mainPlayer
  * Walk in straight line to a specific position on the map
  */
 private fun Player.walkToPosition(
-    map: Map,
+    gameMap: GameMap,
     cellSize: Int,
     goToPosition: Pair<Float, Float>,
     padding: Float = 0.2f,
@@ -322,11 +322,11 @@ private fun Player.walkToPosition(
         val newY = this.y + stepY
 
         if (!isMainPlayer) {
-            if (isWall(newX + stepX.sign * padding, this.y, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+            if (isWall(newX + stepX.sign * padding, this.y, gameMap.MAP, gameMap.MAP_X, gameMap.MAP_Y, cellSize) == WallType.NONE) {
                 this.x = newX
             }
 
-            if (isWall(this.x, newY + stepY.sign * padding, map.MAP, map.MAP_X, map.MAP_Y, cellSize) == WallType.NONE) {
+            if (isWall(this.x, newY + stepY.sign * padding, gameMap.MAP, gameMap.MAP_X, gameMap.MAP_Y, cellSize) == WallType.NONE) {
                 this.y = newY
             }
         } else {

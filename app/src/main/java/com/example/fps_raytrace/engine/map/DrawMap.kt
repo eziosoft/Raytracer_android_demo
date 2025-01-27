@@ -1,7 +1,7 @@
 package com.example.fps_raytrace.engine.map
 
 import com.example.fps_raytrace.engine.utils.Screen
-import com.example.fps_raytrace.maps.Map
+import com.example.fps_raytrace.maps.GameMap
 import com.example.fps_raytrace.engine.Player
 import kotlin.math.cos
 import kotlin.math.sin
@@ -13,7 +13,7 @@ private val enemyMapColor = Screen.Color(255, 0, 0)
 
 fun drawMap(
     screen: Screen,
-    map: Map,
+    gameMap: GameMap,
     xOffset: Int,
     yOffset: Int,
     cellSize: Int,
@@ -21,22 +21,22 @@ fun drawMap(
     playerSize: Float,
     enemies: List<Player>
 ) {
-    for (y: Int in 0 until map.MAP_Y) {
-        for (x in 0 until map.MAP_X) {
+    for (y: Int in 0 until gameMap.MAP_Y) {
+        for (x in 0 until gameMap.MAP_X) {
 
-            val r = if (map.MAP[y * map.MAP_X + x] > 0) {
+            val r = if (gameMap.MAP[y * gameMap.MAP_X + x] > 0) {
                 filledColor.red
             } else {
                 emptyColor.red
             }
 
-            val g = if (map.MAP[y * map.MAP_X + x] > 0) {
+            val g = if (gameMap.MAP[y * gameMap.MAP_X + x] > 0) {
                 filledColor.green
             } else {
                 emptyColor.green
             }
 
-            val b = if (map.MAP[y * map.MAP_X + x] > 0) {
+            val b = if (gameMap.MAP[y * gameMap.MAP_X + x] > 0) {
                 filledColor.blue
             } else {
                 emptyColor.blue

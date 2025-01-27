@@ -26,8 +26,8 @@ import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sound
 import com.example.fps_raytrace.engine.utils.WallType
 import com.example.fps_raytrace.engine.utils.isWall
-import com.example.fps_raytrace.maps.Map
-import com.example.fps_raytrace.maps.Map1
+import com.example.fps_raytrace.maps.GameMap
+import com.example.fps_raytrace.maps.GameMap1
 import com.example.fps_raytrace.maps.MapObject
 import com.example.fps_raytrace.maps.convertMapTo2DArrayForA_Star
 import com.example.fps_raytrace.maps.findArrayIndexesFromPosition
@@ -67,7 +67,7 @@ class RaytracerEngine(
     private var cpuCount: Int = Runtime.getRuntime().availableProcessors()
     private val wallDepths = FloatArray(screenWidth) // depth buffer
 
-    private val currentMap: Map = Map1
+    private val currentGameMap: GameMap = GameMap1
 
     // Textures
     private val wallTextures = Walls(context)
@@ -85,10 +85,10 @@ class RaytracerEngine(
     val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
 
     private val playerPosition = findPositionBasedOnMapIndex(
-        mapX = currentMap.MAP_X,
-        mapY = currentMap.MAP_Y,
+        mapX = currentGameMap.MAP_X,
+        mapY = currentGameMap.MAP_Y,
         cellSize = cellSize,
-        index = currentMap.MAP.indexOf(MapObject.player.id)
+        index = currentGameMap.MAP.indexOf(MapObject.player.id)
     )
 
     // create main player
@@ -102,7 +102,7 @@ class RaytracerEngine(
     )
 
     //create enemies
-    private val enemies = currentMap.getEnemiesFromMap(
+    private val enemies = currentGameMap.getEnemiesFromMap(
         cellSize = cellSize,
         state = PlayerState.WALKING,
         sound = sound
@@ -123,7 +123,7 @@ class RaytracerEngine(
 
     fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
-            enemy.animate(map = currentMap,
+            enemy.animate(gameMap = currentGameMap,
                 cellSize = cellSize,
                 mainPlayer = player,
                 isWallBetween = {
@@ -131,7 +131,7 @@ class RaytracerEngine(
                 })
         }
 
-        player.animate(newState = player.state, map = currentMap, cellSize = cellSize)
+        player.animate(newState = player.state, gameMap = currentGameMap, cellSize = cellSize)
         movePlayer(pressedKeys)
         onFrame(effects(generateFrame()))
     }
@@ -168,9 +168,9 @@ class RaytracerEngine(
             if (DRAW_MAP) {
                 drawMap(
                     screen = screen,
-                    map = currentMap,
+                    gameMap = currentGameMap,
                     xOffset = 10,
-                    yOffset = screenHeight - cellSize * currentMap.MAP_Y - 10,
+                    yOffset = screenHeight - cellSize * currentGameMap.MAP_Y - 10,
                     player = player,
                     enemies = enemies,
                     cellSize = cellSize,
@@ -186,7 +186,7 @@ class RaytracerEngine(
             val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
             val end = Pair(42, 22) // exit position
 
-            val newPath = aStar(start, end, currentMap.convertMapTo2DArrayForA_Star(), addStartNode = false)?.map { it.findPositionFromArrayIndexes(cellSize) }
+            val newPath = aStar(start, end, currentGameMap.convertMapTo2DArrayForA_Star(), addStartNode = false)?.map { it.findPositionFromArrayIndexes(cellSize) }
 
             path.clear()
             path.addAll(newPath ?: emptyList())
@@ -233,7 +233,7 @@ class RaytracerEngine(
 
 
         val animateTime = measureTime {
-            player.animate(map = currentMap, cellSize = cellSize)
+            player.animate(gameMap = currentGameMap, cellSize = cellSize)
         }
 
 
@@ -348,12 +348,12 @@ class RaytracerEngine(
                                     side = 1
                                 }
 
-                                if (mapX < 0 || mapX >= currentMap.MAP_X || mapY < 0 || mapY >= currentMap.MAP_Y) {
+                                if (mapX < 0 || mapX >= currentGameMap.MAP_X || mapY < 0 || mapY >= currentGameMap.MAP_Y) {
                                     hit = true
-                                } else if (currentMap.MAP[mapY * currentMap.MAP_X + mapX] > 0) {
+                                } else if (currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX] > 0) {
                                     hit = true
                                     wallTextureIndex =
-                                        currentMap.MAP[mapY * currentMap.MAP_X + mapX]
+                                        currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX]
                                 }
                             }
 
@@ -494,9 +494,9 @@ class RaytracerEngine(
         if (isWall(
                 newX,
                 player.y,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.NONE
         ) {
@@ -506,9 +506,9 @@ class RaytracerEngine(
         if (isWall(
                 player.x,
                 newY,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.NONE
         ) {
@@ -569,9 +569,9 @@ class RaytracerEngine(
         if (isWall(
                 newX,
                 player.y,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.NONE
         ) {
@@ -581,9 +581,9 @@ class RaytracerEngine(
         if (isWall(
                 player.x,
                 newY,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.NONE
         ) {
@@ -602,17 +602,17 @@ class RaytracerEngine(
         return isWall(
             newX,
             player.y,
-            currentMap.MAP,
-            currentMap.MAP_X,
-            currentMap.MAP_Y,
+            currentGameMap.MAP,
+            currentGameMap.MAP_X,
+            currentGameMap.MAP_Y,
             cellSize
         ) == WallType.EXIT ||
                 isWall(
                     newY,
                     player.y,
-                    currentMap.MAP,
-                    currentMap.MAP_X,
-                    currentMap.MAP_Y,
+                    currentGameMap.MAP,
+                    currentGameMap.MAP_X,
+                    currentGameMap.MAP_Y,
                     cellSize
                 ) == WallType.EXIT
     }
@@ -622,32 +622,32 @@ class RaytracerEngine(
         if (isWall(
                 newX,
                 player.y,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] =
+            currentGameMap.MAP[currentGameMap.MAP_X * (player.y.toInt() / cellSize) + (newX.toInt() / cellSize)] =
                 0
         }
 
         if (isWall(
                 player.x,
                 newY,
-                currentMap.MAP,
-                currentMap.MAP_X,
-                currentMap.MAP_Y,
+                currentGameMap.MAP,
+                currentGameMap.MAP_X,
+                currentGameMap.MAP_Y,
                 cellSize
             ) == WallType.DOOR
         ) {
-            currentMap.MAP[currentMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] =
+            currentGameMap.MAP[currentGameMap.MAP_X * (newY.toInt() / cellSize) + (player.x.toInt() / cellSize)] =
                 0
         }
     }
 
     private fun shootAndCheckHits() {
-        player.animate(newState = PlayerState.SHOOTING, map = currentMap, cellSize = cellSize)
+        player.animate(newState = PlayerState.SHOOTING, gameMap = currentGameMap, cellSize = cellSize)
 
         if (player.mainPlayerShootingFrame == 0) {
             sound.playSound(R.raw.gunshot1)
@@ -711,9 +711,9 @@ class RaytracerEngine(
             if (isWall(
                     mapX.toFloat(),
                     mapY.toFloat(),
-                    currentMap.MAP,
-                    currentMap.MAP_X,
-                    currentMap.MAP_Y,
+                    currentGameMap.MAP,
+                    currentGameMap.MAP_X,
+                    currentGameMap.MAP_Y,
                     cellSize
                 ) != WallType.NONE
             ) {
