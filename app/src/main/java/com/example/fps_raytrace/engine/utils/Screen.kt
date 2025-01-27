@@ -4,7 +4,7 @@ import kotlin.math.abs
 
 class Screen(val width: Int, val height: Int) {
     val bitmap = ByteArray(width * height * 4)
-    private val depthMap = ByteArray(width * height)
+    private val depthMap = IntArray(width * height)
 
     init {
         clear()
@@ -23,7 +23,7 @@ class Screen(val width: Int, val height: Int) {
         }
     }
 
-    fun setRGB(x: Int, y: Int, red: Int, green: Int, blue: Int, depth:Int, alpha: Int = 0xFF) {
+    fun setRGB(x: Int, y: Int, red: Int, green: Int, blue: Int, depth: Int, alpha: Int = 0xFF) {
         if (x < 0 || x >= width || y < 0 || y >= height) return
 
         val offset = (y * width + x) * 4
@@ -32,10 +32,10 @@ class Screen(val width: Int, val height: Int) {
         bitmap[offset + 2] = blue.toByte()
         bitmap[offset + 3] = alpha.toByte()
 
-        depthMap[y * width + x] = depth.toByte()
+        depthMap[y * width + x] = depth
     }
 
-    fun setRGB(x: Int, y: Int, color: IntArray, depth: Int =0) {
+    fun setRGB(x: Int, y: Int, color: IntArray, depth: Int = 0) {
         if (x < 0 || x >= width || y < 0 || y >= height) return
 
         val offset = (y * width + x) * 4
@@ -44,7 +44,7 @@ class Screen(val width: Int, val height: Int) {
         bitmap[offset + 2] = color[2].toByte()
         bitmap[offset + 3] = 0xFF.toByte()
 
-        depthMap[y * width + x] = depth.toByte()
+        depthMap[y * width + x] = depth
     }
 
     fun getRGB(x: Int, y: Int): IntArray {
@@ -60,23 +60,19 @@ class Screen(val width: Int, val height: Int) {
         return bitmap
     }
 
-    fun getDepth(x: Int, y: Int): Byte {
+    fun getDepth(x: Int, y: Int): Int {
         return depthMap[y * width + x]
     }
 
     fun setDepth(x: Int, y: Int, depth: Int) {
-        depthMap[y * width + x] = depth.toByte()
+        depthMap[y * width + x] = depth
     }
 
-    fun getDepthBitmap(): ByteArray {
-        val depthBitmap = ByteArray(width * height)
-        for (i in depthMap.indices) {
-            depthBitmap[i] = (depthMap[i] * 255).toInt().toByte()
-        }
-        return depthBitmap
+    fun getDepthBitmap(): IntArray {
+        return depthMap
     }
 
-    fun drawFilledRect(x: Int, y: Int, w: Int, h: Int, red: Int, green: Int, blue: Int, depth: Int=0) {
+    fun drawFilledRect(x: Int, y: Int, w: Int, h: Int, red: Int, green: Int, blue: Int, depth: Int = 0) {
         for (i in x until x + w) {
             for (j in y until y + h) {
                 setRGB(i, j, red, green, blue, depth = depth)
@@ -84,7 +80,7 @@ class Screen(val width: Int, val height: Int) {
         }
     }
 
-    fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int, red: Int, green: Int, blue: Int, depth: Int=0) {
+    fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int, red: Int, green: Int, blue: Int, depth: Int = 0) {
         var x = x1
         var y = y1
         val dx = abs(x2 - x1)
@@ -127,7 +123,7 @@ class Screen(val width: Int, val height: Int) {
         bitmapSizeX: Int,
         bitmapSizeY: Int,
         transparentColor: Color,
-        depth: Int=0
+        depth: Int = 0
     ) {
         var offset = 0
         for (j in 0 until bitmapSizeY) {

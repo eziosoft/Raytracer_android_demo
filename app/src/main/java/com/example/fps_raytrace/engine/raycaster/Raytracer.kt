@@ -735,6 +735,10 @@ class RaytracerEngine(
     fun getPlayerHealth(): Int {
         return player.health
     }
+
+    fun getDepthMap(): IntArray {
+        return screen.getDepthBitmap()
+    }
 }
 
 

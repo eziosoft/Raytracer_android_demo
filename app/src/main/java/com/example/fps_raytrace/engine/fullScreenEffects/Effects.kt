@@ -95,9 +95,9 @@ fun Screen.depthMap(): Screen {
     for (i in 0 until width) {
         for (j in 0 until height) {
             val color = getDepth(i, j)
-            temp[(j * width + i) * 4] = color
-            temp[(j * width + i) * 4 + 1] = color
-            temp[(j * width + i) * 4 + 2] = color
+            temp[(j * width + i) * 4] = color.toByte()
+            temp[(j * width + i) * 4 + 1] = color.toByte()
+            temp[(j * width + i) * 4 + 2] = color.toByte()
             temp[(j * width + i) * 4 + 3] = 0xFF.toByte()
         }
     }

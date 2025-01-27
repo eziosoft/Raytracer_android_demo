@@ -117,8 +117,6 @@ class MainActivity : ComponentActivity() {
                     RayCaster(raytracer = raytracerEngine)
 
 
-
-
                     var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
                     GlitchEffect(modifier = Modifier.fillMaxSize()) {
                         if (started) {
@@ -251,6 +249,7 @@ class MainActivity : ComponentActivity() {
             runtimeShader.setFloatUniform("displacement", displacement)
             runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity + 1.5f)
             runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
+//            runtimeShader.setIntUniform("depthMap", raytracerEngine.getDepthMap())
         }
 
         // Display the ImageBitmap

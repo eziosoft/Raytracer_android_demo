@@ -17,6 +17,62 @@ val emptyShader = """
    }
 """.trimIndent()
 
+
+// runtimeShader.setIntUniform("depthMap", raytracerEngine.getDepthMap())
+@Language("AGSL")
+val distanceBlurShader = """
+  uniform shader composable; // The base image shader
+uniform float time; // Time uniform for animated noise (if applicable)
+uniform float noiseIntensity; // Intensity of the noise effect (if applicable)
+uniform float displacement; // Chromatic aberration displacement (if applicable)
+uniform float brightness; // Brightness of the final image
+uniform float2 resolution; // Screen resolution
+uniform int depthMap; // Depth map (int array of depth values from 0 to 255)
+
+// Helper function to sample the depth map
+int getDepth(int2 pixel) {
+    return texelFetch(depthMap, pixel, 0).r; // Fetch depth value from depthMap texture
+}
+
+half4 main(float2 fragCoord) {
+    // Get current pixel coordinates
+    int2 pixelCoord = int2(fragCoord * resolution);
+
+    // Fetch depth value for the current pixel
+    int currentDepth = getDepth(pixelCoord);
+    
+    // Blur intensity based on depth
+    float blurAmount = 1.0 - float(currentDepth) / 255.0; // Closer pixels have more blur
+
+    // Sample surrounding pixels for blur effect (for simplicity, we sample a 3x3 grid)
+    float3 colorSum = float3(0.0);
+    float weightSum = 0.0;
+
+    // Loop through surrounding pixels (3x3 grid)
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            int2 offset = pixelCoord + int2(dx, dy);
+            int neighborDepth = getDepth(offset);
+
+            // Calculate weight based on depth difference (close depth = stronger weight)
+            float depthDifference = abs(float(currentDepth) - float(neighborDepth));
+            float weight = exp(-depthDifference * blurAmount); // More blur for bigger difference
+
+            // Sample the color of the neighboring pixel
+            float3 neighborColor = composable.eval(fragCoord + float2(dx, dy) / resolution).rgb;
+            colorSum += neighborColor * weight;
+            weightSum += weight;
+        }
+    }
+
+    // Normalize the final color based on accumulated weight
+    float3 blurredColor = colorSum / weightSum;
+
+    // Apply final brightness (if needed) and return the result
+    return half4(blurredColor * brightness, 1.0);
+}
+""".trimIndent()
+
 @Language("AGSL")
 val analogShader = """
    uniform shader composable; // The base image shader
