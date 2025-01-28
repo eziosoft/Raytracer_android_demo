@@ -197,8 +197,8 @@ class MainActivity : ComponentActivity() {
                     raytracer.gameLoop(
                         pressedKeys = pressedKeys,
                         effects = { screen ->
-//                            screen
-                            screen.depthMap()
+                            screen
+//                            screen.depthMap()
                         },
                         onFrame = { screen ->
                             bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(screen.getByteArray()))
@@ -249,7 +249,6 @@ class MainActivity : ComponentActivity() {
             runtimeShader.setFloatUniform("displacement", displacement)
             runtimeShader.setFloatUniform("brightness", shaderNoiseIntensity + 1.5f)
             runtimeShader.setFloatUniform("resolution", resolution[0], resolution[1])
-//            runtimeShader.setIntUniform("depthMap", raytracerEngine.getDepthMap())
         }
 
         // Display the ImageBitmap

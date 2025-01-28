@@ -5,11 +5,12 @@ import org.intellij.lang.annotations.Language
 @Language("AGSL")
 val emptyShader = """
    uniform shader composable; // The base image shader
-   uniform float time; // Time uniform for animated noise
-   uniform float noiseIntensity; // Intensity of the noise effect
-   uniform float displacement; // Chromatic aberration displacement
-   uniform float brightness; // Brightness of the final image
    uniform float2 resolution; // Screen resolution
+   
+   uniform float time; // Time uniform for animated noise (if applicable)
+   uniform float noiseIntensity; // Intensity of the noise effect (if applicable)
+   uniform float displacement; // Chromatic aberration displacement (if applicable)
+   uniform float brightness; // Brightness of the final image
    
    half4 main(float2 fragCoord) {
        float3 color = composable.eval(fragCoord).rgb;
@@ -21,7 +22,7 @@ val emptyShader = """
 // runtimeShader.setIntUniform("depthMap", raytracerEngine.getDepthMap())
 @Language("AGSL")
 val distanceBlurShader = """
-  uniform shader composable; // The base image shader
+uniform shader composable; // The base image shader
 uniform float time; // Time uniform for animated noise (if applicable)
 uniform float noiseIntensity; // Intensity of the noise effect (if applicable)
 uniform float displacement; // Chromatic aberration displacement (if applicable)
@@ -124,7 +125,6 @@ val analogShader = """
        return half4(noisyColor, 1.0);
    }
 """.trimIndent()
-
 
 
 @Language("AGSL")
