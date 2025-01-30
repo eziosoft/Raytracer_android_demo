@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -62,6 +63,8 @@ import com.example.fps_raytrace.engine.fullScreenEffects.blurBasedOnDepth
 import com.example.fps_raytrace.engine.fullScreenEffects.depthMap
 import com.example.fps_raytrace.engine.raycaster.RaytracerEngine
 import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -80,6 +83,25 @@ class MainActivity : ComponentActivity() {
     private var isRunning = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+
+        GlobalScope.launch {
+            delay(3000)
+            val response = RetrofitClient.instance.getResponse(
+                OllamaRequest(
+                    model = "llama3.2:latest",
+                    prompt = "Who are you?"
+                )
+            )
+
+            Log.d("aaaa", "onCreate: ${response.body()}")
+        }
+
+
+
+
+
+
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemNavigationBar()
         super.onCreate(savedInstanceState)
