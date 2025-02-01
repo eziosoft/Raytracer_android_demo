@@ -79,10 +79,7 @@ class RaytracerEngine(
     private val guardSprite = GuardSprite(context)
     private val otherSprites = OtherSprites(context)
 
-
-    val path: MutableList<Pair<Float, Float>> = mutableListOf()
-
-    val coroutineScope = CoroutineScope(Dispatchers.Default + Job())
+    private val path: MutableList<Pair<Float, Float>> = mutableListOf()
 
     private val playerPosition = findPositionBasedOnMapIndex(
         mapX = currentGameMap.MAP_X,
@@ -260,7 +257,6 @@ class RaytracerEngine(
 
         return screen
     }
-
 
     // Ray casting using DDA algorithm. Cover walls with wall texture. Add fish-eye correction.
     private fun castRays(
