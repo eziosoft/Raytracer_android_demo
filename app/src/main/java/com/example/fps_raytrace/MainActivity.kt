@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.TopCenter
@@ -50,7 +49,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -58,8 +56,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.fps_raytrace.composable.Joystick
 import com.example.fps_raytrace.engine.Moves
-import com.example.fps_raytrace.engine.fullScreenEffects.blurBasedOnDepth
-import com.example.fps_raytrace.engine.fullScreenEffects.depthMap
 import com.example.fps_raytrace.engine.raycaster.RaytracerEngine
 import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
