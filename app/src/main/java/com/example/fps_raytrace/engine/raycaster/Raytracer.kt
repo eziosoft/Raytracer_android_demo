@@ -1,11 +1,13 @@
 package com.example.fps_raytrace.engine.raycaster
 
+import com.example.fps_raytrace.engine.utils.LogFileHelper
 import aStar
 import android.content.Context
 import android.util.Log
 import com.example.fps_raytrace.engine.Const.DRAW_MAP
 import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
+import com.example.fps_raytrace.engine.Const.AI_RECORD_DATA
 import com.example.fps_raytrace.engine.Const.LOG_STATS
 import com.example.fps_raytrace.engine.Const.MAP_CELL_SIZE
 import com.example.fps_raytrace.engine.Const.PLAYER_FOV
@@ -37,9 +39,7 @@ import com.example.fps_raytrace.maps.getEnemiesFromMap
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.OtherSprites
 import com.example.fps_raytrace.sprites.PistolSprite
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -80,6 +80,8 @@ class RaytracerEngine(
     private val otherSprites = OtherSprites(context)
 
     private val path: MutableList<Pair<Float, Float>> = mutableListOf()
+
+    private val logs: LogFileHelper = LogFileHelper(context)
 
     private val playerPosition = findPositionBasedOnMapIndex(
         mapX = currentGameMap.MAP_X,
@@ -178,7 +180,7 @@ class RaytracerEngine(
 
 
         if (System.currentTimeMillis() % 100 == 0L) {
-            Log.d("aaa", "aStar")
+//            Log.d("aaa", "aStar")
             val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
             val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
             val end = Pair(42, 22) // exit position
@@ -257,6 +259,80 @@ class RaytracerEngine(
 
         return screen
     }
+
+
+    private fun get360Distances(player: Player): Array<Float> {
+        val distances = Array(36) { 0f } // 360 degrees / 10 degrees per step = 36 steps
+        val types = Array(36) { 0f }
+        val rayStep = 10.toRadian() // Convert 10 degrees to radians
+
+        for (i in distances.indices step 2) {
+            val rayAngle = player.rotationRad + i * rayStep
+            val rayDirX = cos(rayAngle)
+            val rayDirY = sin(rayAngle)
+
+            var mapX = floor(player.x / cellSize).toInt()
+            var mapY = floor(player.y / cellSize).toInt()
+
+            val deltaDistX = abs(1 / rayDirX)
+            val deltaDistY = abs(1 / rayDirY)
+
+            val stepX: Int
+            val stepY: Int
+            var sideDistX: Float
+            var sideDistY: Float
+
+            if (rayDirX < 0) {
+                stepX = -1
+                sideDistX = (player.x / cellSize - mapX) * deltaDistX
+            } else {
+                stepX = 1
+                sideDistX = (mapX + 1.0f - player.x / cellSize) * deltaDistX
+            }
+
+            if (rayDirY < 0) {
+                stepY = -1
+                sideDistY = (player.y / cellSize - mapY) * deltaDistY
+            } else {
+                stepY = 1
+                sideDistY = (mapY + 1.0f - player.y / cellSize) * deltaDistY
+            }
+
+            var hit = false
+            var textureIndex = 0
+            while (!hit) {
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX
+                    mapX += stepX
+                } else {
+                    sideDistY += deltaDistY
+                    mapY += stepY
+                }
+
+                if (mapX < 0 || mapX >= currentGameMap.MAP_X || mapY < 0 || mapY >= currentGameMap.MAP_Y) {
+                    hit = true
+                } else if (currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX] > 0) {
+                    hit = true
+                    textureIndex = currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX]
+                }
+            }
+
+            distances[i] = if (sideDistX < sideDistY) {
+                (mapX - player.x / cellSize + (1 - stepX) / 2) / rayDirX
+            } else {
+                (mapY - player.y / cellSize + (1 - stepY) / 2) / rayDirY
+            }
+            types[i] = textureIndex.toFloat()
+        }
+
+        val normalizedDistances = distances.map { (it / 10f).coerceIn(0f..1f) }
+        return normalizedDistances.toTypedArray() + types
+    }
+
+    fun getDistances(): FloatArray {
+        return get360Distances(player).toFloatArray()
+    }
+
 
     // Ray casting using DDA algorithm. Cover walls with wall texture. Add fish-eye correction.
     private fun castRays(
@@ -348,8 +424,7 @@ class RaytracerEngine(
                                     hit = true
                                 } else if (currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX] > 0) {
                                     hit = true
-                                    wallTextureIndex =
-                                        currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX]
+                                    wallTextureIndex = currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX]
                                 }
                             }
 
@@ -471,6 +546,8 @@ class RaytracerEngine(
 
 
     fun movePlayer(x: Float, y: Float, lr: Float) {
+//        if (AI_RECORD_DATA) recordGameForAi(x, y, lr)
+
         var dx = 0f
         var dy = 0f
         var dr = 0f
@@ -519,7 +596,26 @@ class RaytracerEngine(
         }
     }
 
+    private fun recordGameForAi(up: Float, down: Float, left: Float, right: Float, shoot: Float) {
+        val data = get360Distances(player)
+
+        val out = data.joinToString(";") + ";$up;$down;$left;$right;$shoot"
+        Log.d("aaa", out)
+        logs.writeLog(out)
+    }
+
+    fun shareLogFile() {
+        logs.shareLogFile()
+    }
+
     private fun movePlayer(pressedKeys: Set<Moves>) {
+        var up = 0
+        var down = 0
+        var left = 0
+        var right = 0
+        var shoot = 0
+
+
         var dx = 0f
         var dy = 0f
         var dr = 0f
@@ -527,10 +623,12 @@ class RaytracerEngine(
         if (Moves.UP in pressedKeys) {
             dx += PLAYER_SPEED * cos(player.rotationRad)
             dy += PLAYER_SPEED * sin(player.rotationRad)
+            up = 1
         }
         if (Moves.DOWN in pressedKeys) {
             dx -= PLAYER_SPEED * cos(player.rotationRad)
             dy -= PLAYER_SPEED * sin(player.rotationRad)
+            down = 1
         }
 
         if (Moves.MOVE_LEFT in pressedKeys) {
@@ -545,14 +643,23 @@ class RaytracerEngine(
 
         if (Moves.LEFT in pressedKeys) {
             dr -= PLAYER_ROTATION_SPEED_RAD
+            left = 1
         }
         if (Moves.RIGHT in pressedKeys) {
             dr += PLAYER_ROTATION_SPEED_RAD
+            right = 1
         }
+
 
         if (Moves.SHOOT in pressedKeys) {
             shootAndCheckHits()
+            shoot = 1
         }
+
+        if (AI_RECORD_DATA && pressedKeys.isNotEmpty()) {
+            recordGameForAi(up.toFloat(), down.toFloat(), left.toFloat(), right.toFloat(), shoot.toFloat())
+        }
+
 
         // Apply rotation
         val newRotation = player.rotationRad + dr
@@ -592,6 +699,8 @@ class RaytracerEngine(
         if (isExitTouched(newX, newY)) {
             error("You win!")
         }
+
+
     }
 
     private fun isExitTouched(newX: Float, newY: Float): Boolean {

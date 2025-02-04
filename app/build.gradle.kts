@@ -74,4 +74,7 @@ dependencies {
     "baselineProfile"(project(":baselineprofile"))
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.tensorflow.lite)
+    //implementation(libs.tensorflow.lite.task.vision)
 }

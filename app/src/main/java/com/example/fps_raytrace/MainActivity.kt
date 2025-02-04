@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.TopCenter
+import androidx.compose.ui.Alignment.Companion.TopEnd
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -45,6 +47,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,6 +62,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.fps_raytrace.composable.Joystick
+import com.example.fps_raytrace.engine.Const.USE_AI
 import com.example.fps_raytrace.engine.Moves
 import com.example.fps_raytrace.engine.raycaster.RaytracerEngine
 import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
@@ -75,14 +83,19 @@ class MainActivity : ComponentActivity() {
 
     private var isRunning = true
 
+    private lateinit var aiController: AIController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemNavigationBar()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        aiController = AIController(this)
+
+
         raytracerEngine =
-            RaytracerEngine(context = applicationContext, screenWidth = WIDTH, screenHeight = HEIGHT)
+            RaytracerEngine(context = this, screenWidth = WIDTH, screenHeight = HEIGHT)
 
         setContent {
             var started by remember { mutableStateOf(false) }
@@ -108,15 +121,29 @@ class MainActivity : ComponentActivity() {
             }
 
             FPS_raytraceTheme {
-                Box(modifier = Modifier.fillMaxSize()) {
-
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .onKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown) {
+                            when (event.key) {
+                                Key.DirectionUp -> pressedKeys.add(Moves.UP)
+                                Key.DirectionDown -> pressedKeys.add(Moves.DOWN)
+                                Key.DirectionLeft -> pressedKeys.add(Moves.LEFT)
+                                Key.DirectionRight -> pressedKeys.add(Moves.RIGHT)
+                                Key.Spacebar -> pressedKeys.add(Moves.SHOOT)
+                            }
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                ) {
                     RayCaster(raytracer = raytracerEngine)
 
+                    var enemiesCount by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
 
-                    var enemies by remember { mutableIntStateOf(raytracerEngine.getAliveEnemiesCount()) }
                     GlitchEffect(modifier = Modifier.fillMaxSize()) {
                         if (started) {
-
                             LinearProgressIndicator(
                                 progress = { healthProgress.value },
                                 color = Color.Red,
@@ -133,16 +160,16 @@ class MainActivity : ComponentActivity() {
                                 raytracerEngine.movePlayer(0f, -y / 3f, x / 5)
                             }
 
-
                             LaunchedEffect(Unit, isRunning) {
                                 while (isRunning) {
-                                    enemies = raytracerEngine.getAliveEnemiesCount()
+                                    enemiesCount = raytracerEngine.getAliveEnemiesCount()
                                     delay(1000)
                                 }
                             }
 
+                            // Display the enemies count
                             Text(
-                                text = enemies.toString(),
+                                text = enemiesCount.toString(),
                                 fontSize = 40.sp,
                                 color = Color.White,
                                 modifier = Modifier
@@ -156,6 +183,15 @@ class MainActivity : ComponentActivity() {
                                     started = true
                                 }
                             )
+                    }
+
+                    Button(
+                        onClick = {
+                            raytracerEngine.shareLogFile()
+                        },
+                        modifier = Modifier.align(TopEnd)
+                    ) {
+                        Text("Share logs")
                     }
                 }
             }
@@ -202,6 +238,9 @@ class MainActivity : ComponentActivity() {
                             pressedKeys.clear()
                         }
                     )
+
+
+                    if (USE_AI) ai(raytracer)
 
                     delay(1) // delay to allow compose to draw the frame
                 }
@@ -286,6 +325,28 @@ class MainActivity : ComponentActivity() {
             contentScale = ContentScale.FillBounds,
             filterQuality = FilterQuality.High,
         )
+    }
+
+    private fun ai(raytracer: RaytracerEngine) {
+        val distances = raytracer.getDistances()
+        val output = aiController.predict(distances)
+
+        var max = 0f
+        var maxIndex = -1
+        output.forEachIndexed() { index, value ->
+            if (value > max) {
+                max = value
+                maxIndex = index
+            }
+        }
+
+        when (maxIndex) {
+            0 -> pressedKeys.add(Moves.UP)
+            1 -> pressedKeys.add(Moves.DOWN)
+            2 -> pressedKeys.add(Moves.LEFT)
+            3 -> pressedKeys.add(Moves.RIGHT)
+            4 -> pressedKeys.add(Moves.SHOOT)
+        }
     }
 
     override fun onResume() {
