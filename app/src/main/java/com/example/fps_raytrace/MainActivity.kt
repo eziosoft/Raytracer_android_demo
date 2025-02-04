@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
             RaytracerEngine(context = this, screenWidth = WIDTH, screenHeight = HEIGHT)
 
         setContent {
-            var started by remember { mutableStateOf(false) }
+            var started by remember { mutableStateOf(true) }
 
             val healthProgress = remember { Animatable(0f) }
 
@@ -125,17 +125,22 @@ class MainActivity : ComponentActivity() {
                     .fillMaxSize()
                     .onKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown) {
-                            when (event.key) {
-                                Key.DirectionUp -> pressedKeys.add(Moves.UP)
-                                Key.DirectionDown -> pressedKeys.add(Moves.DOWN)
-                                Key.DirectionLeft -> pressedKeys.add(Moves.LEFT)
-                                Key.DirectionRight -> pressedKeys.add(Moves.RIGHT)
-                                Key.Spacebar -> pressedKeys.add(Moves.SHOOT)
-                            }
-                            true
-                        } else {
-                            false
+                            if (event.key == Key.DirectionUp && !pressedKeys.contains(Moves.UP)) pressedKeys.add(Moves.UP)
+                            if (event.key == Key.DirectionDown && !pressedKeys.contains(Moves.DOWN)) pressedKeys.add(Moves.DOWN)
+                            if (event.key == Key.DirectionLeft && !pressedKeys.contains(Moves.LEFT)) pressedKeys.add(Moves.LEFT)
+                            if (event.key == Key.DirectionRight && !pressedKeys.contains(Moves.RIGHT)) pressedKeys.add(Moves.RIGHT)
+                            if (event.key == Key.Spacebar && !pressedKeys.contains(Moves.SHOOT)) pressedKeys.add(Moves.SHOOT)
                         }
+
+                        if (event.type == KeyEventType.KeyUp) {
+                            if (event.key == Key.DirectionUp) pressedKeys.removeAll { it == Moves.UP }
+                            if (event.key == Key.DirectionDown) pressedKeys.removeAll { it == Moves.DOWN }
+                            if (event.key == Key.DirectionLeft) pressedKeys.removeAll { it == Moves.LEFT }
+                            if (event.key == Key.DirectionRight) pressedKeys.removeAll { it == Moves.RIGHT }
+                            if (event.key == Key.Spacebar) pressedKeys.removeAll { it == Moves.SHOOT }
+                        }
+
+                        true
                     }
                 ) {
                     RayCaster(raytracer = raytracerEngine)
@@ -235,7 +240,7 @@ class MainActivity : ComponentActivity() {
                         onFrame = { screen ->
                             bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(screen.getByteArray()))
                             imageBitmap.value = bitmap.asImageBitmap()
-                            pressedKeys.clear()
+//                            pressedKeys.clear()
                         }
                     )
 
