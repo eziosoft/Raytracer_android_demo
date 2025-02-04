@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -76,6 +77,7 @@ private const val FPS = 30
 
 private const val noiseIntensity = 0.2f
 
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var raytracerEngine: RaytracerEngine
@@ -98,7 +100,7 @@ class MainActivity : ComponentActivity() {
             RaytracerEngine(context = this, screenWidth = WIDTH, screenHeight = HEIGHT)
 
         setContent {
-            var started by remember { mutableStateOf(false) }
+            var started by remember { mutableStateOf(true) }
 
             val healthProgress = remember { Animatable(0f) }
 
@@ -157,7 +159,9 @@ class MainActivity : ComponentActivity() {
 
                             Joystick(modifier = Modifier.align(BottomStart)) { x, y ->
                                 pressedKeys.clear()
-                                raytracerEngine.movePlayer(0f, -y / 3f, x / 5)
+
+                                userInputs(leftRight = x, upDown = y, rotate = null)
+
                             }
 
                             LaunchedEffect(Unit, isRunning) {
@@ -196,6 +200,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+
+    private var lr = 0.0f
+    private var up = 0.0f
+    private var rot = 0.0f
+    private fun userInputs(leftRight: Float?, upDown: Float?, rotate: Float?) {
+        leftRight?.let { lr = it }
+        upDown?.let { up = it }
+        rotate?.let { rot = it }
+
+        raytracerEngine.movePlayer(rotation = rot, forwardBack = up, leftRight = lr)
     }
 
     @Composable
@@ -303,8 +319,11 @@ class MainActivity : ComponentActivity() {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
                             change.consume() // Consume the gesture
-                            raytracerEngine.movePlayer(dragAmount.x / 200f, 0f, 0f)
+                            userInputs(leftRight = null, upDown = null, rotate = dragAmount.x)
                         },
+                        onDragEnd = {
+                            userInputs(leftRight = null, upDown = null, rotate = 0f)
+                        }
                     )
                 }
                 .pointerInput(Unit) {
@@ -330,23 +349,13 @@ class MainActivity : ComponentActivity() {
     private fun ai(raytracer: RaytracerEngine) {
         val distances = raytracer.getDistances()
         val output = aiController.predict(distances)
+        println("Output: ${output[0]}, ${output[1]}, ${output[2]}")
 
-        var max = 0f
-        var maxIndex = -1
-        output.forEachIndexed() { index, value ->
-            if (value > max) {
-                max = value
-                maxIndex = index
-            }
-        }
-
-        when (maxIndex) {
-            0 -> pressedKeys.add(Moves.UP)
-            1 -> pressedKeys.add(Moves.DOWN)
-            2 -> pressedKeys.add(Moves.LEFT)
-            3 -> pressedKeys.add(Moves.RIGHT)
-            4 -> pressedKeys.add(Moves.SHOOT)
-        }
+        userInputs(
+            leftRight = output[1],
+            upDown = output[0],
+            rotate = output[2]*50f
+        )
     }
 
     override fun onResume() {

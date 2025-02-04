@@ -545,8 +545,20 @@ class RaytracerEngine(
     }
 
 
-    fun movePlayer(x: Float, y: Float, lr: Float) {
-//        if (AI_RECORD_DATA) recordGameForAi(x, y, lr)
+    fun movePlayer(rotation: Float, forwardBack: Float, leftRight: Float) {
+        Log.d("aaa", "movePlayer: rotation=$rotation, forwardBack=$forwardBack, leftRight=$leftRight")
+
+        if (AI_RECORD_DATA) {
+                recordGameForAi(forwardBack, leftRight, rotation/100f)
+        }
+
+        val x = rotation/200f
+        val y = -forwardBack/10f
+        val lr = leftRight/10f
+
+
+
+
 
         var dx = 0f
         var dy = 0f
@@ -596,10 +608,10 @@ class RaytracerEngine(
         }
     }
 
-    private fun recordGameForAi(up: Float, down: Float, left: Float, right: Float, shoot: Float) {
+    private fun recordGameForAi(x: Float, y: Float, lr: Float) {
         val data = get360Distances(player)
 
-        val out = data.joinToString(";") + ";$up;$down;$left;$right;$shoot"
+        val out = data.joinToString(";") + ";$x;$y;$lr"
         Log.d("aaa", out)
         logs.writeLog(out)
     }
@@ -656,9 +668,9 @@ class RaytracerEngine(
             shoot = 1
         }
 
-        if (AI_RECORD_DATA && pressedKeys.isNotEmpty()) {
-            recordGameForAi(up.toFloat(), down.toFloat(), left.toFloat(), right.toFloat(), shoot.toFloat())
-        }
+//        if (AI_RECORD_DATA && pressedKeys.isNotEmpty()) {
+//            recordGameForAi(up.toFloat(), down.toFloat(), left.toFloat(), right.toFloat(), shoot.toFloat())
+//        }
 
 
         // Apply rotation

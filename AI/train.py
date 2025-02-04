@@ -2,34 +2,41 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-# Define training parameters
+# Training parameters
 epochs = 2000
-batch_size = 128  # Increased batch size for smoother training
+batch_size = 512  # 🔥 Increased for stability
 
-# Define input and output sizes
-input_size = 36 * 2  # 36 ray distances + 36 object types
-output_size = 5  # 4 movement keys + 1 shoot button
+# Input/Output sizes
+input_size = 36 * 2
+output_size = 3
 
-print("Training model for enemy AI movement...")
-print("Input size:", input_size)
-print("Output size:", output_size)
-print("-----------------------------")
+print("Creating optimized model...")
 
-print("Creating model...")
-# Define the model with dropout and L2 regularization to prevent overfitting
+# 🚀 IMPROVED ARCHITECTURE
 model = tf.keras.Sequential([
     layers.Input(shape=(input_size,)),
-    layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-    layers.Dropout(0.2),  # Dropout to prevent overfitting
-    layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-    layers.Dropout(0.3),
-    layers.Dense(output_size, activation='sigmoid')  # 4 movement keys + 1 shoot button
+
+    layers.Dense(512, activation='swish', kernel_regularizer=tf.keras.regularizers.l2(0.00005)),
+    layers.BatchNormalization(),
+    layers.Dropout(0.1),
+
+    layers.Dense(256, activation='swish', kernel_regularizer=tf.keras.regularizers.l2(0.00005)),
+    layers.BatchNormalization(),
+    layers.Dropout(0.1),
+
+    layers.Dense(128, activation='swish'),
+
+    layers.Dense(64, activation='swish'),
+
+    layers.Dense(output_size, activation='tanh')
 ])
 
-# Compile the model
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
+# 🚀 IMPROVED LOSS & OPTIMIZER
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+              loss=tf.keras.losses.Huber(delta=1.0),
+              metrics=['mae'])
 
 print("Loading training data...")
 try:
@@ -39,77 +46,39 @@ except Exception as e:
     print("Error loading data:", e)
     exit()
 
-print("First row of data:", data[0])
-
-# Split data into inputs (X) and outputs (y)
+# 🔄 NORMALIZATION & NOISE INJECTION
 X_train = data[:, :input_size]
-y_train = data[:, input_size:input_size + output_size]  # Explicit slicing for safety
+y_train = data[:, input_size:input_size + output_size]
 
-print("X_train shape:", X_train.shape)
-print("y_train shape:", y_train.shape)
+X_mean = np.mean(X_train, axis=0)
+X_std = np.std(X_train, axis=0) + 1e-8
+X_train = (X_train - X_mean) / X_std
 
-print("Training data loaded...")
-print("Data size:", data.shape)
-input("Press Enter to continue...")
+# 🔥 Add noise to prevent overfitting
+X_train += np.random.normal(0, 0.01, X_train.shape)
 
-# --- Custom Callback for Real-Time Plot ---
-class LivePlotCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        super().__init__()
-        self.losses = []
-        self.val_losses = []
+print("Training shape:", X_train.shape, y_train.shape)
 
-        plt.ion()  # Interactive mode
-        self.fig, self.ax = plt.subplots()
-        self.line1, = self.ax.plot([], [], label='Training Loss', color='blue')
-        self.line2, = self.ax.plot([], [], label='Validation Loss', color='orange')
-        self.ax.set_title('Training Progress')
-        self.ax.set_xlabel('Epochs')
-        self.ax.set_ylabel('Loss')
-        self.ax.legend()
-        self.ax.grid(True)
+# 📉 CALLBACKS
+early_stopping = EarlyStopping(monitor='val_loss', patience=50, restore_best_weights=True)
+lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=1e-6)
 
-        plt.show(block=False)  # Non-blocking show
-
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        self.losses.append(logs.get('loss', 0.0))
-        self.val_losses.append(logs.get('val_loss', 0.0))  # Prevents key errors
-
-        # Update plot data
-        self.line1.set_xdata(range(len(self.losses)))
-        self.line1.set_ydata(self.losses)
-        self.line2.set_xdata(range(len(self.val_losses)))
-        self.line2.set_ydata(self.val_losses)
-
-        self.ax.relim()
-        self.ax.autoscale_view()
-
-        plt.draw()
-        plt.pause(0.01)  # Update the figure
-
-# Add early stopping to prevent overfitting
-early_stopping = EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
-
-print("Training model...")
-# Train the model with real-time loss plot and early stopping
+# 🚀 TRAIN MODEL
+print("Training model with final tweaks...")
 history = model.fit(
     X_train, y_train,
     epochs=epochs,
     batch_size=batch_size,
-    validation_split=0.2,
-    callbacks=[LivePlotCallback(), early_stopping]
+    validation_split=0.3,
+    callbacks=[early_stopping, lr_scheduler]
 )
 
 print("Converting to TensorFlow Lite...")
-# Convert to TensorFlow Lite
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 tflite_model = converter.convert()
 
-# Save for Android
 with open("ai_movement.tflite", "wb") as f:
     f.write(tflite_model)
 
 print("Model trained and saved as ai_movement.tflite")
 print("Done!")
-input("Press Enter to exit...")
