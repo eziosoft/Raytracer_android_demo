@@ -354,7 +354,7 @@ class MainActivity : ComponentActivity() {
         userInputs(
             leftRight = output[1],
             upDown = output[0],
-            rotate = output[2]*50f
+            rotate = 0f//output[2]*200f
         )
     }
 
