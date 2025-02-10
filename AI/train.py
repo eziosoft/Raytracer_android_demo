@@ -9,8 +9,9 @@ epochs = 2000
 batch_size = 128  # Increased batch size for smoother training
 
 # Define input and output sizes
-input_size = 36 * 2  # 36 ray distances + 36 object types
-output_size = 5  # 4 movement keys + 1 shoot button
+# Input is an array of 36 ray distances + 36 object types + 2 player X Y positions
+input_size = 36 * 2 + 2   # 36 ray distances  + 36 object types + 2 player positions
+output_size = 5  # 4 movement keys + 1 shoot button, Forwards, Backwards, Left, Right, Shoot
 
 print("Training model for enemy AI movement...")
 print("Input size:", input_size)
@@ -21,11 +22,14 @@ print("Creating model...")
 # Define the model with dropout and L2 regularization to prevent overfitting
 model = tf.keras.Sequential([
     layers.Input(shape=(input_size,)),
+    layers.Dense(512, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+    layers.Dropout(0.2),
+    layers.Dense(256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+    layers.Dropout(0.2),
     layers.Dense(128, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
-    layers.Dropout(0.2),  # Dropout to prevent overfitting
-    layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
     layers.Dropout(0.3),
-    layers.Dense(output_size, activation='sigmoid')  # 4 movement keys + 1 shoot button
+    layers.Dense(64, activation='relu'),
+    layers.Dense(output_size, activation='sigmoid')
 ])
 
 # Compile the model

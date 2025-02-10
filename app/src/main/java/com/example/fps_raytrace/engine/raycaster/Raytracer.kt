@@ -596,12 +596,29 @@ class RaytracerEngine(
         }
     }
 
+    private var lastInput: FloatArray = floatArrayOf(0f, 0f, 0f, 0f, 0f)
     private fun recordGameForAi(up: Float, down: Float, left: Float, right: Float, shoot: Float) {
         val data = get360Distances(player)
 
-        val out = data.joinToString(";") + ";$up;$down;$left;$right;$shoot"
+        val normalisedPlayerX = player.x / (currentGameMap.MAP_X * cellSize)
+        val normalisedPlayerY = player.y / (currentGameMap.MAP_Y * cellSize)
+
+        val out = data.joinToString(";") + ";$normalisedPlayerX;$normalisedPlayerY;$up;$down;$left;$right;$shoot"
         Log.d("aaa", out)
         logs.writeLog(out)
+
+        lastInput[0] = up
+        lastInput[1] = down
+        lastInput[2] = left
+        lastInput[3] = right
+        lastInput[4] = shoot
+    }
+
+  fun getDataForAi(): FloatArray {
+        val distance = get360Distances(player).toFloatArray()
+        val normalisedPlayerX = player.x / (currentGameMap.MAP_X * cellSize)
+        val normalisedPlayerY = player.y / (currentGameMap.MAP_Y * cellSize)
+        return distance + floatArrayOf(normalisedPlayerX, normalisedPlayerY)
     }
 
     fun shareLogFile() {

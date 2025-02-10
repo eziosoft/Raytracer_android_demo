@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -69,6 +70,7 @@ import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import kotlin.random.Random
 
 private const val WIDTH = 640
 private const val HEIGHT = WIDTH * 7 / 16
@@ -332,26 +334,29 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+
     private fun ai(raytracer: RaytracerEngine) {
-        val distances = raytracer.getDistances()
-        val output = aiController.predict(distances)
 
-        var max = 0f
-        var maxIndex = -1
-        output.forEachIndexed() { index, value ->
-            if (value > max) {
-                max = value
-                maxIndex = index
-            }
-        }
+        val output = aiController.predict(raytracer.getDataForAi())
 
-        when (maxIndex) {
-            0 -> pressedKeys.add(Moves.UP)
-            1 -> pressedKeys.add(Moves.DOWN)
-            2 -> pressedKeys.add(Moves.LEFT)
-            3 -> pressedKeys.add(Moves.RIGHT)
-            4 -> pressedKeys.add(Moves.SHOOT)
-        }
+        Log.d("bbb", "ai: ${output.joinToString(",")}")
+
+        val threshold = Random.nextFloat().coerceIn(0.05f, 0.5f)
+
+        if (output[0] > threshold) pressedKeys.add(Moves.UP)
+        else pressedKeys.removeAll { it == Moves.UP }
+
+        if (output[1] > threshold) pressedKeys.add(Moves.DOWN)
+        else pressedKeys.removeAll { it == Moves.DOWN }
+
+        if (output[2] > threshold) pressedKeys.add(Moves.LEFT)
+        else pressedKeys.removeAll { it == Moves.LEFT }
+
+        if (output[3] > threshold) pressedKeys.add(Moves.RIGHT)
+        else pressedKeys.removeAll { it == Moves.RIGHT }
+
+        if (output[4] > threshold) pressedKeys.add(Moves.SHOOT)
+        else pressedKeys.removeAll { it == Moves.SHOOT }
     }
 
     override fun onResume() {

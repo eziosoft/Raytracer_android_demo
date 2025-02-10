@@ -19,7 +19,6 @@ object Const {
     val PLAYER_ROTATION_SPEED_RAD = 2f.toRadian()
     val PLAYER_FOV = 100.toRadian()
 
-    const val USE_AI = false
-
+    const val USE_AI = true
     const val AI_RECORD_DATA = false
 }
