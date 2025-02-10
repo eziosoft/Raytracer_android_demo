@@ -76,5 +76,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.gpu)
     //implementation(libs.tensorflow.lite.task.vision)
 }

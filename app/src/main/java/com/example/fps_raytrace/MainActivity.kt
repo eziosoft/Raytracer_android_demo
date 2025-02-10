@@ -369,6 +369,7 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         isRunning = false
         raytracerEngine.dispose()
+        aiController.close()
     }
 
     private fun hideSystemNavigationBar() {
@@ -379,5 +380,7 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
+
+
 }
 
