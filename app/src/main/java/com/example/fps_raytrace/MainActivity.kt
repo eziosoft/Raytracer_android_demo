@@ -341,7 +341,7 @@ class MainActivity : ComponentActivity() {
 
         Log.d("bbb", "ai: ${output.joinToString(",")}")
 
-        val threshold = Random.nextFloat().coerceIn(0.05f, 0.5f)
+        val threshold = 0.5f //Random.nextFloat().coerceIn(0.05f, 0.5f)
 
         if (output[0] > threshold) pressedKeys.add(Moves.UP)
         else pressedKeys.removeAll { it == Moves.UP }
@@ -349,7 +349,7 @@ class MainActivity : ComponentActivity() {
         if (output[1] > threshold) pressedKeys.add(Moves.DOWN)
         else pressedKeys.removeAll { it == Moves.DOWN }
 
-        if (output[2] > threshold) pressedKeys.add(Moves.LEFT)
+        if (output[2] > threshold - 0.1f) pressedKeys.add(Moves.LEFT)  // -0.1f to make it less sensitive and avoid jitter
         else pressedKeys.removeAll { it == Moves.LEFT }
 
         if (output[3] > threshold) pressedKeys.add(Moves.RIGHT)

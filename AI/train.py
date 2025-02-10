@@ -15,13 +15,13 @@ output_size = 5  # Forwards, Backwards, Left, Right, Shoot
 print("Creating optimized model...")
 model = tf.keras.Sequential([
     layers.Input(shape=(input_size,)),
-    layers.Dense(512, activation='relu', kernel_regularizer=regularizers.l2(0.002)),
-    layers.Dropout(0.5),
-    layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.002)),
-    layers.Dropout(0.5),
-    layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.002)),
-    layers.Dropout(0.5),
-    layers.Dense(64, activation='relu'),
+    layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dropout(0.4),
+    layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dropout(0.4),
+    layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dropout(0.4),
+    layers.Dense(32, activation='relu'),
     layers.Dense(output_size, activation='sigmoid')
 ])
 
