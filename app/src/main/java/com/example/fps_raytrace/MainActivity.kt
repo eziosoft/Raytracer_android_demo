@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
             RaytracerEngine(context = this, screenWidth = WIDTH, screenHeight = HEIGHT)
 
         setContent {
-            var started by remember { mutableStateOf(true) }
+            var started by remember { mutableStateOf(false) }
 
             val healthProgress = remember { Animatable(0f) }
 
