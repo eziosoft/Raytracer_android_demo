@@ -9,6 +9,7 @@ import com.example.fps_raytrace.engine.utils.isTransparent
 import com.example.fps_raytrace.engine.utils.normalizeAngle
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 fun drawEnemy(
@@ -23,14 +24,10 @@ fun drawEnemy(
     val numTextures = 8  // Assuming there are 8 textures in the textureSet
 
 
-    // Reverse the direction of diff calculation
     var diff = enemy.rotationRad - atan2(player.y - enemy.y, player.x - enemy.x)
+    diff = (diff + PI * 2) % (PI * 2)  // Normalize to [0, 2*PI)
+    val textureIndex = ((diff / (2 * PI) * numTextures).roundToInt()) % numTextures
 
-// Normalize the angle difference to [0, 2 * PI)
-    val normalizedDiff = (diff + 2 * PI) % (2 * PI)
-
-// Calculate the texture index
-    val textureIndex = ((normalizedDiff / (2 * PI) * numTextures).toInt()) % numTextures
 
 
 // Fetch the correct texture for rendering
