@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
 
     private var isRunning = true
 
-    private lateinit var aiController: AIController
+    private var aiController: AIController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        aiController = AIController(this)
+        if (USE_AI) aiController = AIController(this)
 
 
         raytracerEngine =
@@ -336,27 +336,31 @@ class MainActivity : ComponentActivity() {
 
 
     private fun ai(raytracer: RaytracerEngine) {
+        if (aiController == null) {
+            return
+        } else {
 
-        val output = aiController.predict(raytracer.getDataForAi())
+            val output = aiController?.predict(raytracer.getDataForAi())
 
-        Log.d("bbb", "ai: ${output.joinToString(",")}")
+            Log.d("bbb", "ai: ${output?.joinToString(",")}")
 
-        val threshold = 0.5f //Random.nextFloat().coerceIn(0.05f, 0.5f)
+            val threshold = Random.nextFloat().coerceIn(0.4f, 0.5f)
 
-        if (output[0] > threshold) pressedKeys.add(Moves.UP)
-        else pressedKeys.removeAll { it == Moves.UP }
+            if (output!![0] > threshold) pressedKeys.add(Moves.UP)
+            else pressedKeys.removeAll { it == Moves.UP }
 
-        if (output[1] > threshold) pressedKeys.add(Moves.DOWN)
-        else pressedKeys.removeAll { it == Moves.DOWN }
+            if (output[1] > threshold) pressedKeys.add(Moves.DOWN)
+            else pressedKeys.removeAll { it == Moves.DOWN }
 
-        if (output[2] > threshold - 0.1f) pressedKeys.add(Moves.LEFT)  // -0.1f to make it less sensitive and avoid jitter
-        else pressedKeys.removeAll { it == Moves.LEFT }
+            if (output[2] > threshold - 0.1f) pressedKeys.add(Moves.LEFT)  // -0.1f to make it less sensitive and avoid jitter
+            else pressedKeys.removeAll { it == Moves.LEFT }
 
-        if (output[3] > threshold) pressedKeys.add(Moves.RIGHT)
-        else pressedKeys.removeAll { it == Moves.RIGHT }
+            if (output[3] > threshold) pressedKeys.add(Moves.RIGHT)
+            else pressedKeys.removeAll { it == Moves.RIGHT }
 
-        if (output[4] > threshold) pressedKeys.add(Moves.SHOOT)
-        else pressedKeys.removeAll { it == Moves.SHOOT }
+            if (output[4] > threshold) pressedKeys.add(Moves.SHOOT)
+            else pressedKeys.removeAll { it == Moves.SHOOT }
+        }
     }
 
     override fun onResume() {
@@ -369,7 +373,7 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         isRunning = false
         raytracerEngine.dispose()
-        aiController.close()
+        aiController?.close()
     }
 
     private fun hideSystemNavigationBar() {
