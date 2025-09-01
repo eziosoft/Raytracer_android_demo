@@ -11,8 +11,8 @@ object Const {
     const val SHOOT_ENEMY_DAMAGE = 1
     const val SHOOT_PLAYER_DAMAGE = 100
 
-    const val ENEMIES_CAN_SHOOT = false
-    const val ENEMIES_WALK_TO_PLAYER = false
+    const val ENEMIES_CAN_SHOOT = true
+    const val ENEMIES_WALK_TO_PLAYER = true
     const val PLAYER_A_STAR_WALK = false // use A* algorithm for player movement (for testing purposes)
 
     const val PLAYER_SPEED = 0.2f
