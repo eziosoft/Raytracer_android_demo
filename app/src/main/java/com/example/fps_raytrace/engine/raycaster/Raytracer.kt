@@ -103,7 +103,7 @@ class RaytracerEngine(
     //create enemies
     private val enemies = currentGameMap.getEnemiesFromMap(
         cellSize = cellSize,
-        state = PlayerState.WALKING,
+        state = PlayerState.IDLE,
         sound = sound
     )
 
@@ -602,9 +602,10 @@ class RaytracerEngine(
 
         val normalisedPlayerX = player.x / (currentGameMap.MAP_X * cellSize)
         val normalisedPlayerY = player.y / (currentGameMap.MAP_Y * cellSize)
+        val normalizedPlayerRotation = player.rotationRad / (2 * Math.PI)
 
-        val out = data.joinToString(";") + ";$normalisedPlayerX;$normalisedPlayerY;$up;$down;$left;$right;$shoot"
-        Log.d("aaa", out)
+        val out = data.joinToString(";") + ";$normalisedPlayerX;$normalisedPlayerY;$normalizedPlayerRotation;$up;$down;$left;$right;$shoot"
+//        Log.d("aaa", out)
         logs.writeLog(out)
 
         lastInput[0] = up
@@ -614,11 +615,12 @@ class RaytracerEngine(
         lastInput[4] = shoot
     }
 
-  fun getDataForAi(): FloatArray {
+    fun getDataForAi(): FloatArray {
         val distance = get360Distances(player).toFloatArray()
         val normalisedPlayerX = player.x / (currentGameMap.MAP_X * cellSize)
         val normalisedPlayerY = player.y / (currentGameMap.MAP_Y * cellSize)
-        return distance + floatArrayOf(normalisedPlayerX, normalisedPlayerY)
+        val normalizedPlayerRotation = (player.rotationRad / (2 * Math.PI)).toFloat()
+        return distance + floatArrayOf(normalisedPlayerX, normalisedPlayerY, normalizedPlayerRotation)
     }
 
     fun shareLogFile() {
