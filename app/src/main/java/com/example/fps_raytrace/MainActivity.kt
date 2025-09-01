@@ -73,7 +73,7 @@ import java.nio.ByteBuffer
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-private const val WIDTH = 640
+private const val WIDTH = 800
 private const val HEIGHT = WIDTH * 7 / 16
 private const val FPS = 30
 
