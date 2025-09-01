@@ -8,35 +8,39 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 # Training parameters
 EPOCHS = 1000
-BATCH_SIZE = 2000
-LEARNING_RATE = 0.0003
-INPUT_SIZE = 36 * 2 + 2   # 36 ray distances  + 36 object types + 2 player positions
-OUTPUT_SIZE = 5           # Forwards, Backwards, Left, Right, Shoot
+BATCH_SIZE = 1000
+INPUT_SIZE = 36 * 2 + 2 + 1  # 36 ray distances + 36 object types + 2 player positions + player rotation
+OUTPUT_SIZE = 5  # Forwards, Backwards, Left, Right, Shoot
 MODEL_FILE = "ai_movement.keras"
 TFLITE_FILE = "ai_movement.tflite"
 
-
 def create_model():
-    """Creates and returns a new TensorFlow model"""
-    print("Creating a new model...")
     model = tf.keras.Sequential([
         layers.Input(shape=(INPUT_SIZE,)),
-        layers.Dense(256, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-        layers.Dropout(0.4),
-        layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-        layers.Dropout(0.4),
-        layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-        layers.Dropout(0.4),
-        layers.Dense(32, activation='relu'),
+
+        layers.Dense(128, kernel_regularizer=regularizers.l2(0.001)),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.2),
+
+        layers.Dense(64, kernel_regularizer=regularizers.l2(0.001)),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.2),
+
+        layers.Dense(32, kernel_regularizer=regularizers.l2(0.001)),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.1),
+
         layers.Dense(OUTPUT_SIZE, activation='sigmoid')
     ])
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0003),
         loss=tf.keras.losses.BinaryCrossentropy(label_smoothing=0.1),
         metrics=['accuracy']
     )
-
     return model
 
 
@@ -57,6 +61,21 @@ def train_model(model, dataset_file):
 
     print("X_train shape:", X_train.shape)
     print("y_train shape:", y_train.shape)
+
+    # Learning rate decay
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate=0.0003,  # Start with 0.0003
+        decay_steps=1000,  # Reduce every 1000 steps
+        decay_rate=0.96,  # 4% decay
+        staircase=True  # Apply in discrete steps
+    )
+
+    # Apply new optimizer with learning rate decay
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
+        loss=tf.keras.losses.BinaryCrossentropy(label_smoothing=0.1),
+        metrics=['accuracy']
+    )
 
     # Early stopping with lower patience
     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
@@ -99,6 +118,7 @@ def train_model(model, dataset_file):
     print("Saved training accuracy plot as training_accuracy_plot.png")
 
     plt.show()
+
 
 
 def convert_to_tflite():
