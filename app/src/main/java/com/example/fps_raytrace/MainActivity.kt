@@ -70,6 +70,7 @@ import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 private const val WIDTH = 640
@@ -344,22 +345,21 @@ class MainActivity : ComponentActivity() {
 
             Log.d("bbb", "ai: ${output?.joinToString(",")}")
 
-            val threshold = Random.nextFloat().coerceIn(0.4f, 0.5f)
+            val threshold = 0.5f //Random.nextFloat().coerceIn(0.01f, 0.5f)
 
-            if (output!![0] > threshold) pressedKeys.add(Moves.UP)
-            else pressedKeys.removeAll { it == Moves.UP }
+            // find the max value
+            val max = output?.maxOrNull() ?: 0f
+            val index = output?.indexOfFirst { it == max } ?: 0
 
-            if (output[1] > threshold) pressedKeys.add(Moves.DOWN)
-            else pressedKeys.removeAll { it == Moves.DOWN }
 
-            if (output[2] > threshold - 0.1f) pressedKeys.add(Moves.LEFT)  // -0.1f to make it less sensitive and avoid jitter
-            else pressedKeys.removeAll { it == Moves.LEFT }
-
-            if (output[3] > threshold) pressedKeys.add(Moves.RIGHT)
-            else pressedKeys.removeAll { it == Moves.RIGHT }
-
-            if (output[4] > threshold) pressedKeys.add(Moves.SHOOT)
-            else pressedKeys.removeAll { it == Moves.SHOOT }
+            pressedKeys.clear()
+                when (index) {
+                    0 -> pressedKeys.add(Moves.UP)
+                    1 -> pressedKeys.add(Moves.DOWN)
+                    2 -> pressedKeys.add(Moves.LEFT)
+                    3 -> pressedKeys.add(Moves.RIGHT)
+                    4 -> pressedKeys.add(Moves.SHOOT)
+                }
         }
     }
 
