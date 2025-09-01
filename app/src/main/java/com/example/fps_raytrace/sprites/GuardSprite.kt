@@ -16,74 +16,77 @@ class GuardSprite(context: Context) : Sprite {
 
     private val guardTextureSheet = readPpmImage(context, R.raw.enemy)
 
+    private val divider = 1
+
     private val guardStill = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        5 to loadFrame(guardTextureSheet, 5, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        6 to loadFrame(guardTextureSheet, 6, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        7 to loadFrame(guardTextureSheet, 7, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        5 to loadFrame(guardTextureSheet, 5, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        6 to loadFrame(guardTextureSheet, 6, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        7 to loadFrame(guardTextureSheet, 7, 0, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardWalking1 = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        5 to loadFrame(guardTextureSheet, 5, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        6 to loadFrame(guardTextureSheet, 6, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        7 to loadFrame(guardTextureSheet, 7, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        5 to loadFrame(guardTextureSheet, 5, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        6 to loadFrame(guardTextureSheet, 6, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        7 to loadFrame(guardTextureSheet, 7, 1, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardWalking2 = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        5 to loadFrame(guardTextureSheet, 5, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        6 to loadFrame(guardTextureSheet, 6, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        7 to loadFrame(guardTextureSheet, 7, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        5 to loadFrame(guardTextureSheet, 5, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        6 to loadFrame(guardTextureSheet, 6, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        7 to loadFrame(guardTextureSheet, 7, 2, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardWalking3 = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        5 to loadFrame(guardTextureSheet, 5, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        6 to loadFrame(guardTextureSheet, 6, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        7 to loadFrame(guardTextureSheet, 7, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        5 to loadFrame(guardTextureSheet, 5, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        6 to loadFrame(guardTextureSheet, 6, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        7 to loadFrame(guardTextureSheet, 7, 3, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardWalking4 = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        5 to loadFrame(guardTextureSheet, 5, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        6 to loadFrame(guardTextureSheet, 6, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        7 to loadFrame(guardTextureSheet, 7, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        5 to loadFrame(guardTextureSheet, 5, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        6 to loadFrame(guardTextureSheet, 6, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        7 to loadFrame(guardTextureSheet, 7, 4, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardDyingFrames = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        3 to loadFrame(guardTextureSheet, 3, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        4 to loadFrame(guardTextureSheet, 4, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        3 to loadFrame(guardTextureSheet, 3, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        4 to loadFrame(guardTextureSheet, 4, 5, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
 
     private val guardShootingFrames = mapOf(
-        0 to loadFrame(guardTextureSheet, 0, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        1 to loadFrame(guardTextureSheet, 1, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
-        2 to loadFrame(guardTextureSheet, 2, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, 1),
+        0 to loadFrame(guardTextureSheet, 0, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        1 to loadFrame(guardTextureSheet, 1, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
+        2 to loadFrame(guardTextureSheet, 2, 6, SPRITE_SIZE, 8 * SPRITE_SIZE, divider),
     )
+
     override fun getTexture(
         direction: Int,
         state: PlayerState,
