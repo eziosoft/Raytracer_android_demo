@@ -144,20 +144,37 @@ class Screen(val width: Int, val height: Int) {
 }
 
 
-fun Int.darkenColor(intensity: Float) = (this * intensity).toInt().coerceIn(0, 255)
-fun IntArray.darkenColor(intensity: Float) = intArrayOf(
-    this[0].darkenColor(intensity),
-    this[1].darkenColor(intensity),
-    this[2].darkenColor(intensity)
-)
+fun Int.darkenColor(intensity: Float): Int {
+    return when {
+        intensity >= 1.0f -> this
+        intensity <= 0.0f -> 0
+        intensity == 0.5f -> this shr 1  // Fast division by 2 using bit shift
+        else -> ((this * intensity).toInt()).coerceIn(0, 255)
+    }
+}
+
+fun IntArray.darkenColor(intensity: Float): IntArray {
+    return when {
+        intensity >= 1.0f -> this.copyOf()
+        intensity <= 0.0f -> intArrayOf(0, 0, 0)
+        intensity == 0.5f -> intArrayOf(  // Fast division by 2 using bit shift
+            this[0] shr 1,
+            this[1] shr 1,
+            this[2] shr 1
+        )
+
+        else -> {
+            // Inline the calculation to avoid function call overhead
+            val factor = intensity
+            intArrayOf(
+                ((this[0] * factor).toInt()).coerceIn(0, 255),
+                ((this[1] * factor).toInt()).coerceIn(0, 255),
+                ((this[2] * factor).toInt()).coerceIn(0, 255)
+            )
+        }
+    }
+}
 
 fun isTransparent(color: IntArray, transparentColor: Screen.Color): Boolean {
     return color[0] == transparentColor.red && color[1] == transparentColor.green && color[2] == transparentColor.blue
 }
-
-
-
-
-
-
-
