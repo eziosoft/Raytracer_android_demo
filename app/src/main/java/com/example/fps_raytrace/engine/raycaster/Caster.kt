@@ -20,32 +20,53 @@ fun renderSurface(
     cellSize: Int
 ) {
     val textureSize = sqrt((texture.size / 3).toDouble()).toInt()
+    val textureSizeMask = textureSize - 1 // For fast modulo with power-of-2 textures
+
+    // Pre-calculate constants
+    val heightFloat = height.toFloat()
+    val cellSizeInv = 1.0f / cellSize
+    val playerWorldX = player.x * cellSizeInv
+    val playerWorldY = player.y * cellSizeInv
+
+    // Pre-calculate darkening factor (0.5f corresponds to multiplying by 128)
+    val darkenShift = 1 // Equivalent to multiplying by 0.5
 
     for (screenY in rowRange) {
+        // Optimized distance calculation
         val distance = if (isCeiling) {
-            height.toFloat() / (height - 2.0f * screenY)
+            heightFloat / (height - (screenY shl 1)) // Use bit shift for *2
         } else {
-            height.toFloat() / (2.0f * screenY - height)
+            heightFloat / ((screenY shl 1) - height)
         }
 
-        val worldX = player.x / cellSize + distance * rayDirectionX
-        val worldY = player.y / cellSize + distance * rayDirectionY
+        // Calculate world coordinates with pre-computed values
+        val worldX = playerWorldX + distance * rayDirectionX
+        val worldY = playerWorldY + distance * rayDirectionY
 
-        val textureX = (((worldX - floor(worldX)) * textureSize) % textureSize).toInt()
-        val textureY = (((worldY - floor(worldY)) * textureSize) % textureSize).toInt()
+        // Fast texture coordinate calculation using bit operations where possible
+        val worldXFrac = worldX - worldX.toInt() // Faster than floor for positive values
+        val worldYFrac = worldY - worldY.toInt()
+
+        val textureX = (worldXFrac * textureSize).toInt() and textureSizeMask
+        val textureY = (worldYFrac * textureSize).toInt() and textureSizeMask
         val textureIndex = (textureY * textureSize + textureX) * 3
 
-        val red = texture[textureIndex]
-        val green = texture[textureIndex + 1]
-        val blue = texture[textureIndex + 2]
+        // Direct array access and optimized darkening
+        val baseIndex = textureIndex
+        val red = texture[baseIndex] shr darkenShift
+        val green = texture[baseIndex + 1] shr darkenShift
+        val blue = texture[baseIndex + 2] shr darkenShift
+
+        // Pre-calculate depth to avoid function call overhead
+        val depthValue = if (distance >= 10f) 255 else (distance * 25.5f).toInt()
 
         screen.setRGB(
             screenColumn,
             screenY,
-            red.darkenColor(0.5f),
-            green.darkenColor(0.5f),
-            blue.darkenColor(0.5f),
-            depth = ((distance / 10f).coerceIn(0f, 1f) * 255).toInt()
+            red,
+            green,
+            blue,
+            depth = depthValue
         )
     }
 }
