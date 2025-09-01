@@ -13,7 +13,7 @@ object Const {
 
     const val ENEMIES_CAN_SHOOT = false
     const val ENEMIES_WALK_TO_PLAYER = false
-    const val PLAYER_A_START_WALK = false
+    const val PLAYER_A_STAR_WALK = false // use A* algorithm for player movement (for testing purposes)
 
     const val PLAYER_SPEED = 0.2f
     val PLAYER_ROTATION_SPEED_RAD = 2f.toRadian()

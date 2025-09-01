@@ -103,7 +103,7 @@ class RaytracerEngine(
     //create enemies
     private val enemies = currentGameMap.getEnemiesFromMap(
         cellSize = cellSize,
-        state = PlayerState.IDLE,
+        state = PlayerState.WALKING,
         sound = sound
     )
 

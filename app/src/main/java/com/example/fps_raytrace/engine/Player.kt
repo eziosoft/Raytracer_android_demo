@@ -3,7 +3,7 @@ package com.example.fps_raytrace.engine
 import aStar
 import com.example.fps_raytrace.engine.Const.ENEMIES_CAN_SHOOT
 import com.example.fps_raytrace.engine.Const.ENEMIES_WALK_TO_PLAYER
-import com.example.fps_raytrace.engine.Const.PLAYER_A_START_WALK
+import com.example.fps_raytrace.engine.Const.PLAYER_A_STAR_WALK
 import com.example.fps_raytrace.engine.Const.SHOOT_ENEMY_DAMAGE
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.PlayerState.DEAD
@@ -92,7 +92,7 @@ fun Player.animate(
                 walkRandom(gameMap, cellSize, mainPlayer = mainPlayer)
             } else {
 
-                if (PLAYER_A_START_WALK) {
+                if (PLAYER_A_STAR_WALK) {
                     if (goToPosition == null) {
                         aStar(gameMap, cellSize, callBack = { player, currentPosition, nextPosition ->
                             player.goToPosition = nextPosition
