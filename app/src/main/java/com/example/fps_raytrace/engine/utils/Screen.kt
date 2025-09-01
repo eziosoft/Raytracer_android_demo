@@ -144,7 +144,7 @@ class Screen(val width: Int, val height: Int) {
 }
 
 
-fun Int.darkenColor(intensity: Float): Int {
+inline fun Int.darkenColor(intensity: Float): Int {
     return when {
         intensity >= 1.0f -> this
         intensity <= 0.0f -> 0
@@ -153,7 +153,7 @@ fun Int.darkenColor(intensity: Float): Int {
     }
 }
 
-fun IntArray.darkenColor(intensity: Float): IntArray {
+inline fun IntArray.darkenColor(intensity: Float): IntArray {
     return when {
         intensity >= 1.0f -> this.copyOf()
         intensity <= 0.0f -> intArrayOf(0, 0, 0)
@@ -175,6 +175,6 @@ fun IntArray.darkenColor(intensity: Float): IntArray {
     }
 }
 
-fun isTransparent(color: IntArray, transparentColor: Screen.Color): Boolean {
+inline fun isTransparent(color: IntArray, transparentColor: Screen.Color): Boolean {
     return color[0] == transparentColor.red && color[1] == transparentColor.green && color[2] == transparentColor.blue
 }
