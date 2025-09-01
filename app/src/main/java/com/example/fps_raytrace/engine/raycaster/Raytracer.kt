@@ -1,18 +1,17 @@
 package com.example.fps_raytrace.engine.raycaster
 
-import com.example.fps_raytrace.engine.utils.LogFileHelper
 import aStar
 import android.content.Context
-import android.util.Log
-import com.example.fps_raytrace.engine.Const.DRAW_MAP
-import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.Const.AI_RECORD_DATA
+import com.example.fps_raytrace.engine.Const.DRAW_MAP
+import com.example.fps_raytrace.engine.Const.ENABLE_A_STAR
 import com.example.fps_raytrace.engine.Const.LOG_STATS
 import com.example.fps_raytrace.engine.Const.MAP_CELL_SIZE
 import com.example.fps_raytrace.engine.Const.PLAYER_FOV
 import com.example.fps_raytrace.engine.Const.PLAYER_ROTATION_SPEED_RAD
 import com.example.fps_raytrace.engine.Const.PLAYER_SPEED
+import com.example.fps_raytrace.engine.Const.SHOOT_PLAYER_DAMAGE
 import com.example.fps_raytrace.engine.Moves
 import com.example.fps_raytrace.engine.Player
 import com.example.fps_raytrace.engine.PlayerState
@@ -20,14 +19,14 @@ import com.example.fps_raytrace.engine.animate
 import com.example.fps_raytrace.engine.distanceTo
 import com.example.fps_raytrace.engine.inShotAngle
 import com.example.fps_raytrace.engine.map.drawMap
-import com.example.fps_raytrace.textures.Walls
-import com.example.fps_raytrace.engine.utils.normalizeAngle
-import com.example.fps_raytrace.engine.utils.toRadian
-import com.example.fps_raytrace.engine.utils.readPpmImage
+import com.example.fps_raytrace.engine.utils.LogFileHelper
 import com.example.fps_raytrace.engine.utils.Screen
 import com.example.fps_raytrace.engine.utils.Sound
 import com.example.fps_raytrace.engine.utils.WallType
 import com.example.fps_raytrace.engine.utils.isWall
+import com.example.fps_raytrace.engine.utils.normalizeAngle
+import com.example.fps_raytrace.engine.utils.readPpmImage
+import com.example.fps_raytrace.engine.utils.toRadian
 import com.example.fps_raytrace.maps.GameMap
 import com.example.fps_raytrace.maps.GameMap1
 import com.example.fps_raytrace.maps.MapObject
@@ -39,6 +38,7 @@ import com.example.fps_raytrace.maps.getEnemiesFromMap
 import com.example.fps_raytrace.sprites.GuardSprite
 import com.example.fps_raytrace.sprites.OtherSprites
 import com.example.fps_raytrace.sprites.PistolSprite
+import com.example.fps_raytrace.textures.Walls
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -46,11 +46,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
 import kotlin.math.ceil
-import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
@@ -122,7 +120,8 @@ class RaytracerEngine(
 
     fun gameLoop(pressedKeys: Set<Moves>, effects: (Screen) -> Screen, onFrame: (Screen) -> Unit) {
         enemies.forEach { enemy ->
-            enemy.animate(gameMap = currentGameMap,
+            enemy.animate(
+                gameMap = currentGameMap,
                 cellSize = cellSize,
                 mainPlayer = player,
                 isWallBetween = {
@@ -179,7 +178,7 @@ class RaytracerEngine(
         }
 
 
-        if (System.currentTimeMillis() % 100 == 0L) {
+        if (ENABLE_A_STAR && System.currentTimeMillis() % 100 == 0L) {
 //            Log.d("aaa", "aStar")
             val playerArrayPosition = findArrayIndexesFromPosition(player.x, player.y, cellSize)
             val start = Pair(playerArrayPosition.first, playerArrayPosition.second)
@@ -213,8 +212,8 @@ class RaytracerEngine(
         val drawPistolTime = measureTime {
             screen.drawBitmap(
                 bitmap = pistolSprite.getFrame(player.mainPlayerShootingFrame)!!,
-                x = 2 * screen.width / 3 + (20 * sin(player.x)).toInt(),
-                y = (screen.height - 175 * 0.8f + 20 - 10 * sin(player.y)).toInt(),
+                x = 2 * screen.width / 3 + (20 * fastSin(player.x)).toInt(),
+                y = (screen.height - 175 * 0.8f + 20 - 10 * fastSin(player.y)).toInt(),
                 bitmapSizeX = 128,
                 bitmapSizeY = 128,
                 transparentColor = pistolSprite.TRANSPARENT_COLOR
@@ -268,8 +267,8 @@ class RaytracerEngine(
 
         for (i in distances.indices step 2) {
             val rayAngle = player.rotationRad + i * rayStep
-            val rayDirX = cos(rayAngle)
-            val rayDirY = sin(rayAngle)
+            val rayDirX = fastCos(rayAngle)
+            val rayDirY = fastSin(rayAngle)
 
             var mapX = floor(player.x / cellSize).toInt()
             var mapY = floor(player.y / cellSize).toInt()
@@ -355,8 +354,8 @@ class RaytracerEngine(
             for (x in 0 until rayCount) {
                 val rayAngle = player.rotationRad + (x - rayCount / 2) * rayStep
 
-                sinCache[x] = sin(rayAngle)
-                cosCache[x] = cos(rayAngle)
+                sinCache[x] = fastSin(rayAngle)
+                cosCache[x] = fastCos(rayAngle)
                 deltaDistXCache[x] = abs(1 / cosCache[x])
                 deltaDistYCache[x] = abs(1 / sinCache[x])
             }
@@ -438,7 +437,7 @@ class RaytracerEngine(
                             wallDepths[x] = perpWallDist
 
                             // Fish-eye correction
-                            val correctedWallDist = perpWallDist// * cos(x * rayStep - fovRad / 2)
+                            val correctedWallDist = perpWallDist// * fastCos(x * rayStep - fovRad / 2)
 
                             // Calculate height of the line to draw on screen
                             val lineHeight = (screenHeight / correctedWallDist).toInt()
@@ -552,11 +551,11 @@ class RaytracerEngine(
         var dy = 0f
         var dr = 0f
 
-        dx = lr * cos(player.rotationRad + 90f)
-        dy = lr * sin(player.rotationRad + 90f)
+        dx = lr * fastCos(player.rotationRad + 90f)
+        dy = lr * fastSin(player.rotationRad + 90f)
 
-        dx += y * cos(player.rotationRad) // delta x
-        dy += y * sin(player.rotationRad) // delta y
+        dx += y * fastCos(player.rotationRad) // delta x
+        dy += y * fastSin(player.rotationRad) // delta y
 
         dr = x // delta rotation
         player.rotationRad += dr.normalizeAngle()
@@ -640,24 +639,24 @@ class RaytracerEngine(
         var dr = 0f
 
         if (Moves.UP in pressedKeys) {
-            dx += PLAYER_SPEED * cos(player.rotationRad)
-            dy += PLAYER_SPEED * sin(player.rotationRad)
+            dx += PLAYER_SPEED * fastCos(player.rotationRad)
+            dy += PLAYER_SPEED * fastSin(player.rotationRad)
             up = 1
         }
         if (Moves.DOWN in pressedKeys) {
-            dx -= PLAYER_SPEED * cos(player.rotationRad)
-            dy -= PLAYER_SPEED * sin(player.rotationRad)
+            dx -= PLAYER_SPEED * fastCos(player.rotationRad)
+            dy -= PLAYER_SPEED * fastSin(player.rotationRad)
             down = 1
         }
 
         if (Moves.MOVE_LEFT in pressedKeys) {
-            dx -= PLAYER_SPEED * cos(player.rotationRad + 90.toRadian())
-            dy -= PLAYER_SPEED * sin(player.rotationRad + 90.toRadian())
+            dx -= PLAYER_SPEED * fastCos(player.rotationRad + 90.toRadian())
+            dy -= PLAYER_SPEED * fastSin(player.rotationRad + 90.toRadian())
         }
 
         if (Moves.MOVE_RIGHT in pressedKeys) {
-            dx += PLAYER_SPEED * cos(player.rotationRad + 90.toRadian())
-            dy += PLAYER_SPEED * sin(player.rotationRad + 90.toRadian())
+            dx += PLAYER_SPEED * fastCos(player.rotationRad + 90.toRadian())
+            dy += PLAYER_SPEED * fastSin(player.rotationRad + 90.toRadian())
         }
 
         if (Moves.LEFT in pressedKeys) {
