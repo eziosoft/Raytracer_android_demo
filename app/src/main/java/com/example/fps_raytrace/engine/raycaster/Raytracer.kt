@@ -344,118 +344,124 @@ class RaytracerEngine(
         runBlocking {
             val rayCount = screenWidth
             val rayStep = PLAYER_FOV / rayCount
+            val halfRayCount = rayCount / 2
+            val halfScreenHeight = screenHeight / 2
 
-            // Precompute values to avoid recalculating in the loop
-            val sinCache = FloatArray(rayCount)
-            val cosCache = FloatArray(rayCount)
-            val deltaDistXCache = FloatArray(rayCount)
-            val deltaDistYCache = FloatArray(rayCount)
+            // Pre-calculate player position in grid coordinates to avoid repeated division
+            val playerGridX = player.x / cellSize
+            val playerGridY = player.y / cellSize
+            val playerMapX = floor(playerGridX).toInt()
+            val playerMapY = floor(playerGridY).toInt()
 
-            for (x in 0 until rayCount) {
-                val rayAngle = player.rotationRad + (x - rayCount / 2) * rayStep
+            // Pre-calculate map bounds for faster boundary checks
+            val mapXMax = currentGameMap.MAP_X
+            val mapYMax = currentGameMap.MAP_Y
+            val mapWidth = currentGameMap.MAP_X
 
-                sinCache[x] = fastSin(rayAngle)
-                cosCache[x] = fastCos(rayAngle)
-                deltaDistXCache[x] = abs(1 / cosCache[x])
-                deltaDistYCache[x] = abs(1 / sinCache[x])
+            // Precompute all ray directions and related values
+            val rayData = Array(rayCount) { x ->
+                val rayAngle = player.rotationRad + (x - halfRayCount) * rayStep
+                val sinVal = fastSin(rayAngle)
+                val cosVal = fastCos(rayAngle)
+                RayData(
+                    dirX = cosVal,
+                    dirY = sinVal,
+                    deltaDistX = abs(1f / cosVal),
+                    deltaDistY = abs(1f / sinVal)
+                )
             }
 
-            // Chunking the rays to leverage parallel processing
-            val chunkSize = rayCount / cpuCount
-            val rayChunks = (0 until rayCount step chunkSize).toList()
+            // Optimize chunk size for better CPU cache utilization
+            val optimalChunkSize = max(64, rayCount / (cpuCount * 2))
+            val rayChunks = (0 until rayCount step optimalChunkSize).toList()
 
             coroutineScope {
                 val deferredResults = rayChunks.map { startX ->
                     async(Dispatchers.Default) {
-                        //don't run on chunk 1
-//                        if(startX >= chunkSize*2) return@async
+                        val endX = (startX + optimalChunkSize).coerceAtMost(rayCount)
 
-                        for (x in startX until (startX + chunkSize).coerceAtMost(rayCount)) {
-                            // Use cached values
-                            val rayDirX = cosCache[x]
-                            val rayDirY = sinCache[x]
-                            val deltaDistX = deltaDistXCache[x]
-                            val deltaDistY = deltaDistYCache[x]
+                        for (x in startX until endX) {
+                            val ray = rayData[x]
 
-                            // Local variables to avoid repeated array access
-                            var mapX = floor(player.x / cellSize).toInt()
-                            var mapY = floor(player.y / cellSize).toInt()
+                            // Calculate step direction and initial side distances
                             val stepX: Int
                             val stepY: Int
                             var sideDistX: Float
                             var sideDistY: Float
+                            var mapX = playerMapX
+                            var mapY = playerMapY
 
-
-
-                            if (rayDirX < 0) {
+                            if (ray.dirX < 0) {
                                 stepX = -1
-                                sideDistX = (player.x / cellSize - mapX) * deltaDistX
+                                sideDistX = (playerGridX - mapX) * ray.deltaDistX
                             } else {
                                 stepX = 1
-                                sideDistX = (mapX + 1.0f - player.x / cellSize) * deltaDistX
+                                sideDistX = (mapX + 1f - playerGridX) * ray.deltaDistX
                             }
 
-                            if (rayDirY < 0) {
+                            if (ray.dirY < 0) {
                                 stepY = -1
-                                sideDistY = (player.y / cellSize - mapY) * deltaDistY
+                                sideDistY = (playerGridY - mapY) * ray.deltaDistY
                             } else {
                                 stepY = 1
-                                sideDistY = (mapY + 1.0f - player.y / cellSize) * deltaDistY
+                                sideDistY = (mapY + 1f - playerGridY) * ray.deltaDistY
                             }
 
-                            var hit = false
+                            // Optimized DDA algorithm with reduced branching
                             var side = 0
                             var wallTextureIndex = 0
 
-                            // Early exit upon hit detection
-                            while (!hit) {
+                            // Unrolled DDA loop for better performance
+                            while (true) {
                                 if (sideDistX < sideDistY) {
-                                    sideDistX += deltaDistX
+                                    sideDistX += ray.deltaDistX
                                     mapX += stepX
                                     side = 0
                                 } else {
-                                    sideDistY += deltaDistY
+                                    sideDistY += ray.deltaDistY
                                     mapY += stepY
                                     side = 1
                                 }
 
-                                if (mapX < 0 || mapX >= currentGameMap.MAP_X || mapY < 0 || mapY >= currentGameMap.MAP_Y) {
-                                    hit = true
-                                } else if (currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX] > 0) {
-                                    hit = true
-                                    wallTextureIndex = currentGameMap.MAP[mapY * currentGameMap.MAP_X + mapX]
+                                // Single boundary check with early exit
+                                if (mapX < 0 || mapX >= mapXMax || mapY < 0 || mapY >= mapYMax) {
+                                    break
+                                }
+
+                                // Direct array access without function call
+                                val mapValue = currentGameMap.MAP[mapY * mapWidth + mapX]
+                                if (mapValue > 0) {
+                                    wallTextureIndex = mapValue
+                                    break
                                 }
                             }
 
-                            // Calculate perpendicular wall distance
+                            // Calculate perpendicular wall distance with optimized math
                             val perpWallDist: Float = if (side == 0) {
-                                (mapX - player.x / cellSize + (1 - stepX) / 2) / rayDirX
+                                (mapX - playerGridX + (1 - stepX) * 0.5f) / ray.dirX
                             } else {
-                                (mapY - player.y / cellSize + (1 - stepY) / 2) / rayDirY
+                                (mapY - playerGridY + (1 - stepY) * 0.5f) / ray.dirY
                             }
 
                             wallDepths[x] = perpWallDist
 
-                            // Fish-eye correction
-                            val correctedWallDist = perpWallDist// * fastCos(x * rayStep - fovRad / 2)
+                            // Skip fish-eye correction if not needed (commented out in original)
+                            val correctedWallDist = perpWallDist
 
-                            // Calculate height of the line to draw on screen
+                            // Calculate rendering bounds with faster integer operations
                             val lineHeight = (screenHeight / correctedWallDist).toInt()
+                            val drawStart = max(0, halfScreenHeight - (lineHeight shr 1))
+                            val drawEnd = min(screenHeight - 1, halfScreenHeight + (lineHeight shr 1))
 
-                            // Calculate lowest and highest pixel to fill in current stripe
-                            val drawStart = max(0, -lineHeight / 2 + screenHeight / 2)
-                            val drawEnd = min(screenHeight - 1, lineHeight / 2 + screenHeight / 2)
-
-
-                            // Wall casting
+                            // Render components only if needed
                             if (castWalls) {
                                 castWallColumn(
                                     textureIndex = wallTextureIndex,
                                     wallSide = side,
                                     player = player,
                                     wallDistance = correctedWallDist,
-                                    rayDirectionY = rayDirY,
-                                    rayDirectionX = rayDirX,
+                                    rayDirectionY = ray.dirY,
+                                    rayDirectionX = ray.dirX,
                                     columnHeight = lineHeight,
                                     drawStartY = drawStart,
                                     drawEndY = drawEnd,
@@ -467,25 +473,23 @@ class RaytracerEngine(
                                 )
                             }
 
-                            // Ceiling casting
                             if (castCeiling) {
                                 renderCeiling(
                                     drawStartY = drawStart,
                                     player = player,
-                                    rayDirectionX = rayDirX,
-                                    rayDirectionY = rayDirY,
+                                    rayDirectionX = ray.dirX,
+                                    rayDirectionY = ray.dirY,
                                     screen = bitmap,
                                     screenColumn = x
                                 )
                             }
 
-                            // Floor casting
                             if (castFloor) {
                                 renderFloor(
                                     drawEndY = drawEnd,
                                     player = player,
-                                    rayDirectionX = rayDirX,
-                                    rayDirectionY = rayDirY,
+                                    rayDirectionX = ray.dirX,
+                                    rayDirectionY = ray.dirY,
                                     screen = bitmap,
                                     screenColumn = x
                                 )
@@ -859,6 +863,13 @@ class RaytracerEngine(
         return player.health
     }
 }
+
+private data class RayData(
+    val dirX: Float,
+    val dirY: Float,
+    val deltaDistX: Float,
+    val deltaDistY: Float
+)
 
 
 

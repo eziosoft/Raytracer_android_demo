@@ -3,7 +3,7 @@ package com.example.fps_raytrace.engine
 import com.example.fps_raytrace.engine.utils.toRadian
 
 object Const {
-    const val LOG_STATS = false
+    const val LOG_STATS = true
 
     const val DRAW_MAP = false
     const val MAP_CELL_SIZE = 2
