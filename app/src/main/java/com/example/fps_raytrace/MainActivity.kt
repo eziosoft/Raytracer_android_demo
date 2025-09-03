@@ -9,7 +9,9 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.infiniteRepeatable
@@ -70,6 +72,7 @@ import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
+import kotlin.math.tanh
 
 private const val WIDTH = 800
 private const val HEIGHT = WIDTH * 7 / 16
@@ -122,27 +125,28 @@ class MainActivity : ComponentActivity() {
             }
 
             FPS_raytraceTheme {
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .onKeyEvent { event ->
-                        if (event.type == KeyEventType.KeyDown) {
-                            if (event.key == Key.DirectionUp && !pressedKeys.contains(Moves.UP)) pressedKeys.add(Moves.UP)
-                            if (event.key == Key.DirectionDown && !pressedKeys.contains(Moves.DOWN)) pressedKeys.add(Moves.DOWN)
-                            if (event.key == Key.DirectionLeft && !pressedKeys.contains(Moves.LEFT)) pressedKeys.add(Moves.LEFT)
-                            if (event.key == Key.DirectionRight && !pressedKeys.contains(Moves.RIGHT)) pressedKeys.add(Moves.RIGHT)
-                            if (event.key == Key.Spacebar && !pressedKeys.contains(Moves.SHOOT)) pressedKeys.add(Moves.SHOOT)
-                        }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                if (event.key == Key.DirectionUp && !pressedKeys.contains(Moves.UP)) pressedKeys.add(Moves.UP)
+                                if (event.key == Key.DirectionDown && !pressedKeys.contains(Moves.DOWN)) pressedKeys.add(Moves.DOWN)
+                                if (event.key == Key.DirectionLeft && !pressedKeys.contains(Moves.LEFT)) pressedKeys.add(Moves.LEFT)
+                                if (event.key == Key.DirectionRight && !pressedKeys.contains(Moves.RIGHT)) pressedKeys.add(Moves.RIGHT)
+                                if (event.key == Key.Spacebar && !pressedKeys.contains(Moves.SHOOT)) pressedKeys.add(Moves.SHOOT)
+                            }
 
-                        if (event.type == KeyEventType.KeyUp) {
-                            if (event.key == Key.DirectionUp) pressedKeys.removeAll { it == Moves.UP }
-                            if (event.key == Key.DirectionDown) pressedKeys.removeAll { it == Moves.DOWN }
-                            if (event.key == Key.DirectionLeft) pressedKeys.removeAll { it == Moves.LEFT }
-                            if (event.key == Key.DirectionRight) pressedKeys.removeAll { it == Moves.RIGHT }
-                            if (event.key == Key.Spacebar) pressedKeys.removeAll { it == Moves.SHOOT }
-                        }
+                            if (event.type == KeyEventType.KeyUp) {
+                                if (event.key == Key.DirectionUp) pressedKeys.removeAll { it == Moves.UP }
+                                if (event.key == Key.DirectionDown) pressedKeys.removeAll { it == Moves.DOWN }
+                                if (event.key == Key.DirectionLeft) pressedKeys.removeAll { it == Moves.LEFT }
+                                if (event.key == Key.DirectionRight) pressedKeys.removeAll { it == Moves.RIGHT }
+                                if (event.key == Key.Spacebar) pressedKeys.removeAll { it == Moves.SHOOT }
+                            }
 
-                        true
-                    }
+                            true
+                        }
                 ) {
                     RayCaster(raytracer = raytracerEngine)
 
@@ -174,31 +178,36 @@ class MainActivity : ComponentActivity() {
                             }
 
                             // Display the enemies count
-                            Text(
-                                text = enemiesCount.toString(),
-                                fontSize = 40.sp,
-                                color = Color.White,
+                            AnimatedContent(
                                 modifier = Modifier
                                     .align(TopCenter)
-                                    .padding(16.dp)
-                                    .blendMode(BlendMode.Difference)
-                            )
+                                    .padding(16.dp),
+//                                    .blendMode(BlendMode.Difference),
+                                targetState = enemiesCount
+                            ) {
+                                Text(
+                                    text = it.toString(),
+                                    fontSize = 40.sp,
+                                    color = Color.White,
+                                )
+                            }
                         } else
-                            StartScreen(modifier = Modifier.align(Center),
+                            StartScreen(
+                                modifier = Modifier.align(Center),
                                 onStart = {
                                     started = true
                                 }
                             )
                     }
 
-                    Button(
-                        onClick = {
-                            raytracerEngine.shareLogFile()
-                        },
-                        modifier = Modifier.align(TopEnd)
-                    ) {
-                        Text("Share logs")
-                    }
+//                    Button(
+//                        onClick = {
+//                            raytracerEngine.shareLogFile()
+//                        },
+//                        modifier = Modifier.align(TopEnd)
+//                    ) {
+//                        Text("Share logs")
+//                    }
                 }
             }
         }
@@ -351,13 +360,13 @@ class MainActivity : ComponentActivity() {
 
 
             pressedKeys.clear()
-                when (index) {
-                    0 -> pressedKeys.add(Moves.UP)
-                    1 -> pressedKeys.add(Moves.DOWN)
-                    2 -> pressedKeys.add(Moves.LEFT)
-                    3 -> pressedKeys.add(Moves.RIGHT)
-                    4 -> pressedKeys.add(Moves.SHOOT)
-                }
+            when (index) {
+                0 -> pressedKeys.add(Moves.UP)
+                1 -> pressedKeys.add(Moves.DOWN)
+                2 -> pressedKeys.add(Moves.LEFT)
+                3 -> pressedKeys.add(Moves.RIGHT)
+                4 -> pressedKeys.add(Moves.SHOOT)
+            }
         }
     }
 
