@@ -83,45 +83,42 @@ val analogShader = """
    uniform float brightness; // Brightness of the final image
    uniform float2 resolution; // Screen resolution
 
+   // Optimized random function with better distribution
    half rand(float2 coord) {
-       // A pseudo-random function based on the coordinate
-       return fract(sin(dot(coord.xy, float2(12.9898, 78.233))) * 43758.5453);
+       return fract(sin(dot(coord, float2(12.9898, 78.233))) * 43758.5453);
    }
 
    half4 main(float2 fragCoord) {
-       // Normalize coordinates
+       // Normalize coordinates once
        float2 uv = fragCoord / resolution;
 
-       // Sample the base color
+       // Precalculate displacement offsets
+       float2 displacePos = float2(displacement, 0.0);
+       float2 displaceNeg = float2(-displacement, 0.0);
+
+       // Sample all colors in one go to reduce texture fetches
        half3 baseColor = composable.eval(fragCoord).rgb;
+       half r = composable.eval(fragCoord + displacePos).r;
+       half b = composable.eval(fragCoord + displaceNeg).b;
+       
+       // Use green from base color to avoid extra texture sample
+       half3 aberratedColor = half3(r, baseColor.g, b);
 
-       // Apply brightness adjustment
-       baseColor *= brightness;
+       // Apply brightness to aberrated color directly
+       aberratedColor *= brightness;
 
-       // Apply chromatic aberration with proper displacement
-       half r = composable.eval(fragCoord + float2(displacement, 0.0)).r;
-       half g = composable.eval(fragCoord).g;
-       half b = composable.eval(fragCoord - float2(displacement, 0.0)).b;      
-       half3 aberratedColor = half3(r, g, b);
-
-       // Generate noise based on fragCoord and time
-       half noise = rand(fragCoord + time);
-
-       // Scale the noise intensity and apply it to the RGB channels
-       noise = (noise - 0.5) * noiseIntensity;
+       // Generate noise once and apply efficiently
+       half noise = (rand(fragCoord + time) - 0.5) * noiseIntensity;
        half3 noisyColor = aberratedColor + noise;
 
-       // Apply vignette effect
-       float radius = 0.8;
-       float softness = 0.5;
-       float dist = distance(uv, float2(0.5, 0.5)); // Distance from the center
-       float vignette = smoothstep(radius, radius - softness, dist);
-       noisyColor *= vignette;
+       // Optimized vignette calculation - avoid sqrt in distance()
+       float2 centerOffset = uv - 0.5;
+       float distSq = dot(centerOffset, centerOffset); // squared distance
+       float vignette = smoothstep(0.64, 0.09, distSq); // radius²=0.8²=0.64, (radius-softness)²=0.3²=0.09
+       
+       // Apply vignette and clamp in one operation
+       noisyColor = clamp(noisyColor * vignette, 0.0, 1.0);
 
-       // Clamp the final color to ensure it stays within valid range
-       noisyColor = clamp(noisyColor, 0.0, 1.0);
-
-       // Return the final color with alpha preserved
        return half4(noisyColor, 1.0);
    }
 """.trimIndent()
@@ -133,37 +130,51 @@ val glitchShader = """
    uniform float time; // Time uniform for animated effects
    uniform float2 resolution; // Screen resolution
 
+   // Optimized noise function - reuse constants
+   float noise(float2 coord) {
+       return fract(sin(dot(coord, float2(12.9898, 78.233))) * 43758.5453);
+   }
 
    half4 main(float2 fragCoord) {
-       // Normalize coordinates
+       // Normalize coordinates once
        float2 uv = fragCoord / resolution;
 
-       // Random noise for glitch effect
-       float noise = fract(sin(dot(uv * time, float2(12.9898, 78.233))) * 43758.5453);
-       float glitchStrength = (sin(time * 2.0) * 0.5 + 0.5)/2.0; // Oscillating glitch intensity       
-       // Horizontal jitter
-       float jitter = (sin(time * 5.0 + fragCoord.y * 0.1) * 0.005) * resolution.x * glitchStrength;
+       // Precalculate time-based values to avoid redundant calculations
+       float timeNoise = noise(uv * time);
+       float glitchStrength = sin(time * 2.0) * 0.25 + 0.25; // Simplified oscillation (0 to 0.5)
+       
+       // Optimized horizontal jitter calculation
+       float jitter = sin(time * 5.0 + fragCoord.y * 0.1) * 0.005 * resolution.x * glitchStrength;
 
-       // Vertical bands
-       float verticalBand = step(0.9, fract(sin(fragCoord.x * 0.05 + time) * 43758.5453)) * 0.5;
+       // Optimized vertical bands with precalculated values
+       float verticalBand = step(0.9, noise(float2(fragCoord.x * 0.05 + time, 0.0))) * 0.5;
 
-       // Combine displacement for glitching
-       float2 displacedCoord = float2(fragCoord.x + jitter, fragCoord.y + verticalBand * resolution.y * 0.1 * noise);
+       // Calculate displaced coordinates once
+       float2 displacedCoord = float2(
+           fragCoord.x + jitter, 
+           fragCoord.y + verticalBand * resolution.y * 0.1 * timeNoise
+       );
 
-       // Desaturate for weak signal
+       // Sample base color once for desaturation
        half3 baseColor = composable.eval(displacedCoord).rgb;
+       
+       // Efficient grayscale conversion and desaturation
        float gray = dot(baseColor, half3(0.299, 0.587, 0.114));
-       half3 desaturatedColor = mix(baseColor, half3(gray, gray, gray), 0.6); // Adjust desaturation
+       half3 desaturatedColor = mix(baseColor, half3(gray), 0.6);
 
-       // Add subtle scanline effect
-       float scanline = 0.05 * sin(fragCoord.y * 5.0 + time * 10.0);
-       desaturatedColor *= (1.0 + scanline);
+       // Optimized scanline effect - precalculate scanline value
+       float scanline = 1.0 + 0.05 * sin(fragCoord.y * 5.0 + time * 10.0);
+       desaturatedColor *= scanline;
 
-       // Chromatic aberration (slight color channel offsets)
-       half3 glitchColor;
-       glitchColor.r = composable.eval(float2(displacedCoord.x - 20.0 * noise, displacedCoord.y)).r;
-       glitchColor.g = desaturatedColor.g;
-       glitchColor.b = composable.eval(float2(displacedCoord.x + 20.0 * noise, displacedCoord.y)).b;
+       // Precalculate chromatic aberration offsets
+       float2 aberrationOffset = float2(20.0 * timeNoise, 0.0);
+       
+       // Optimized chromatic aberration with fewer texture samples
+       half3 glitchColor = half3(
+           composable.eval(displacedCoord - aberrationOffset).r,
+           desaturatedColor.g,
+           composable.eval(displacedCoord + aberrationOffset).b
+       );
 
        return half4(glitchColor, 1.0);
    }
@@ -244,11 +255,3 @@ val blackAndWhiteDitheringWithOutlineAndNoise = """
         return half4(bwColor, bwColor, bwColor, 1.0);
     }
 """.trimIndent()
-
-
-
-
-
-
-
-

@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import kotlin.math.tanh
 
-private const val WIDTH = 800
+private const val WIDTH = 640
 private const val HEIGHT = WIDTH * 7 / 16
 private const val FPS = 30
 
@@ -224,7 +224,7 @@ class MainActivity : ComponentActivity() {
         var fpsTimer = remember { System.currentTimeMillis() }
 
         // Create a RuntimeShader instance
-        val runtimeShader = remember { RuntimeShader(emptyShader) }
+        val runtimeShader = remember { RuntimeShader(analogShader) }
         // Noise intensity (you can make this a parameter if you want to control it dynamically)
         var shaderNoiseIntensity by remember { mutableFloatStateOf(noiseIntensity) }
 
