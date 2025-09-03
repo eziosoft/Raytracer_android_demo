@@ -5,10 +5,10 @@ import com.example.fps_raytrace.R
 import com.example.fps_raytrace.engine.utils.readPpmImage
 
 class Walls(context: Context) {
-    private val wallTexture1 = readPpmImage(context = context, path = R.raw.wall1)
-    private val wallTexture2 = readPpmImage(context = context, path = R.raw.wall2)
-    private val wallTexture3 = readPpmImage(context = context, path = R.raw.wall3)
-    private val doorTexture = readPpmImage(context = context, path = R.raw.door)
+    private val wallTexture1 = readPpmImage(context = context, path = R.raw.wall_1)
+    private val wallTexture2 = readPpmImage(context = context, path = R.raw.wall_2)
+    private val wallTexture3 = readPpmImage(context = context, path = R.raw.wall_3)
+    private val doorTexture = readPpmImage(context = context, path = R.raw.door_1)
     private val exitTexture = readPpmImage(context = context, path = R.raw.exit)
 
     val wallTextures = mapOf(

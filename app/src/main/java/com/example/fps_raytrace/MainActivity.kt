@@ -70,8 +70,6 @@ import com.example.fps_raytrace.ui.theme.FPS_raytraceTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
-import kotlin.math.absoluteValue
-import kotlin.random.Random
 
 private const val WIDTH = 800
 private const val HEIGHT = WIDTH * 7 / 16

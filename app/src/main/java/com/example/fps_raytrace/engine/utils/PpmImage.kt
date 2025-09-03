@@ -26,9 +26,25 @@ fun readPpmImage(context: Context, path: Int): IntArray {
         // Initialize array to store the pixel data (RGB)
         val array = IntArray(width * height * 3)
 
-        // Read pixel data
+        // Read all remaining content and split by whitespace to get individual pixel values
+        val remainingContent = StringBuilder()
+        var line: String?
+        while (reader.readLine().also { line = it } != null) {
+            line?.let {
+                if (!it.trim().startsWith("#") && it.trim().isNotEmpty()) {
+                    remainingContent.append(it).append(" ")
+                }
+            }
+        }
+
+        // Split by whitespace and parse pixel values
+        val pixelValues = remainingContent.toString().trim().split("\\s+".toRegex())
+
+        // Fill the array with pixel data
         for (i in array.indices) {
-            array[i] = readNonCommentLine(reader).toInt()
+            if (i < pixelValues.size) {
+                array[i] = pixelValues[i].toInt()
+            }
         }
 
         array
